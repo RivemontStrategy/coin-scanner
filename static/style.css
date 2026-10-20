@@ -238,7 +238,9 @@ details.more[open] summary { display: none; }
   .stats dd { font-size: 24px; }
   .stats dt { font-size: 12px; }
   .panel { border: 0; border-radius: 0; padding: 0; }
-  .bar .sel, .bar .tog { flex: none; }
+  .bar .seg button { padding: 0 10px; }
+  #kind { flex: 1 1 100%; max-width: none; }
+  #sort { flex: none; }
   .coins thead { display: none; }
   .coins tbody tr { display: grid; grid-template-columns: 1fr auto auto; align-items: center; column-gap: 10px;
     padding: 16px 0; border-bottom: 1px solid var(--line-2); }
