@@ -294,6 +294,7 @@ def not_found(ctx: Ctx) -> str:
     """Served for any missing address, at any depth: its links are absolute from the site root."""
     ctx.prefix = "/"
     return page(ctx, "404.html", "Page not found", "This page does not exist.",
+                '<script>(function(){var p=location.pathname,l=p.toLowerCase();if(p!==l)location.replace(l+location.search+location.hash);})();</script>'
                 '<section class="hero slim"><h1>Page not found</h1><p class="sub"><a href="/">Back to the scanner</a></p></section>')
 
 
