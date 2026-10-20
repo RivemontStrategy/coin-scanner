@@ -1,11 +1,12 @@
 # Every 15 minutes: fetch prices, compute the signals, build the static site, publish it on GitHub Pages.
-# GitHub's schedule is best effort and often drops runs, so each run publishes four rounds about 15 minutes apart
-# (scan-round.yml); two schedule slots per hour keep it going if one is dropped. Public repository: runner minutes
-# are free. If a round fails, the last published site stays up.
+# GitHub's own schedule is best effort and often drops slots, so each run starts the next one itself
+# (workflow_dispatch with GITHUB_TOKEN, about 15 minutes after it began). The schedule below only restarts that
+# chain if it ever breaks. Only one chain can exist: a run never starts the next one while another run is waiting.
+# Public repository: runner minutes are free. If a run fails, the last published site stays up.
 name: scan and publish
 on:
   schedule:
-    - cron: "2,32 * * * *"
+    - cron: "7,37 * * * *"
   workflow_dispatch:
   push:
     branches: [main]
@@ -13,25 +14,35 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  actions: write
 concurrency:
   group: pages
   cancel-in-progress: false
 jobs:
-  round1:
+  publish:
     uses: ./.github/workflows/scan-round.yml
-    with: {round: "1", wait_min: 0}
-  round2:
-    needs: round1
-    if: ${{ always() && github.event_name == 'schedule' }}
-    uses: ./.github/workflows/scan-round.yml
-    with: {round: "2", wait_min: 11}
-  round3:
-    needs: round2
-    if: ${{ always() && github.event_name == 'schedule' }}
-    uses: ./.github/workflows/scan-round.yml
-    with: {round: "3", wait_min: 11}
-  round4:
-    needs: round3
-    if: ${{ always() && github.event_name == 'schedule' }}
-    uses: ./.github/workflows/scan-round.yml
-    with: {round: "4", wait_min: 11}
+  next:
+    needs: publish
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Wait until 15 minutes after this run began
+        run: |
+          start=$(gh api "repos/$REPO/actions/runs/$GITHUB_RUN_ID" --jq .run_started_at)
+          left=$(( $(date -d "$start" +%s) + 14*60 - $(date +%s) ))
+          echo "run started $start, waiting ${left}s"
+          if [ "$left" -gt 0 ]; then sleep "$left"; fi
+      - name: Start the next run unless another one is already waiting
+        run: |
+          others=0
+          for s in queued pending waiting requested in_progress; do
+            n=$(gh api "repos/$REPO/actions/workflows/scan.yml/runs?status=$s&per_page=20" \
+                --jq "[.workflow_runs[] | select(.id != $GITHUB_RUN_ID)] | length")
+            others=$(( others + n ))
+          done
+          echo "other runs waiting or running: $others"
+          if [ "$others" -eq 0 ]; then gh workflow run scan.yml --repo "$REPO" --ref main; fi
