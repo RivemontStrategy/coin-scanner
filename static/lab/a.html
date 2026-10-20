@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex"><title>Concept A · Feed</title>
+<link rel="stylesheet" href="lab.css">
+<style>
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 56px; padding: 56px 0 80px; }
+h1 { margin: 0; font-size: 30px; font-weight: 500; letter-spacing: -.03em; }
+.sub { margin: 8px 0 0; color: var(--faint); font-size: 14px; }
+.tools { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 28px 0 8px; }
+.grp { margin: 28px 0 0; font-size: 12.5px; color: var(--faint); padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+.row { display: grid; grid-template-columns: 44px minmax(150px, 1.1fr) minmax(0, 1.6fr) 92px 96px; align-items: center; gap: 16px;
+  min-height: 68px; border-bottom: 1px solid var(--line2); }
+.row:hover { background: rgba(255,255,255,.015); }
+.t { color: var(--faint); font-size: 12.5px; }
+.sig b { font-weight: 500; font-size: 14.5px; }
+.sig small { display: block; color: var(--faint); font-size: 12px; margin-top: 2px; }
+.dir { font-size: 13px; }
+.px { text-align: right; }
+.px div { font-size: 14.5px; }
+.px small { font-size: 12px; }
+.side { display: grid; gap: 14px; align-content: start; position: sticky; top: 24px; }
+.card { border: 1px solid var(--line); border-radius: 18px; padding: 22px; }
+.card h3 { margin: 0 0 16px; font-size: 13px; font-weight: 400; color: var(--faint); }
+.split { display: flex; height: 4px; border-radius: 4px; overflow: hidden; margin: 18px 0 10px; background: var(--raise); }
+.split i { display: block; }
+.kv { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); }
+.mini { display: grid; gap: 12px; }
+.mini .asset .logo-i { width: 24px; height: 24px; }
+.mini > div { display: flex; justify-content: space-between; align-items: center; }
+@media (max-width: 900px) {
+  .grid { grid-template-columns: 1fr; gap: 32px; padding-top: 32px; }
+  .side { position: static; order: -1; grid-template-columns: 1fr; }
+  .row { grid-template-columns: 36px 1fr 84px; grid-template-areas: "t a p" "t s s"; row-gap: 6px; padding: 12px 0; }
+  .row .t { grid-area: t; align-self: start; padding-top: 6px; } .row .asset { grid-area: a; } .row .px { grid-area: p; }
+  .row .sig { grid-area: s; } .row .dir { display: none; }
+  .top nav, .search { display: none; }
+  .wrap, .top .in { padding: 0 16px; }
+}
+</style></head><body>
+<header class="top"><div class="in">
+<a class="logo" href="#"><svg viewBox="0 0 20 26"><rect width="7" height="20" fill="currentColor"/><rect x="11" y="6" width="7" height="20" fill="currentColor" opacity=".45"/></svg>RIVEMONT</a>
+<nav><a class="on" href="#">Signals</a><a href="#">Markets</a><a href="#">Learn</a></nav><span class="sp"></span>
+<input class="search" placeholder="Search a coin">
+</div></header>
+<main class="wrap grid">
+<section>
+<h1>What just changed</h1>
+<p class="sub">New signals on the top 150 coins, newest first · closed candles only · <span id="upd"></span></p>
+<div class="tools"><div class="pills" id="dir"><button class="pill on" data-v="">All</button><button class="pill" data-v="bull">Bullish</button><button class="pill" data-v="bear">Bearish</button></div>
+<div class="pills" id="tf"><button class="pill on" data-v="">All charts</button><button class="pill" data-v="1h">1h</button><button class="pill" data-v="4h">4h</button><button class="pill" data-v="1d">1d</button></div></div>
+<div id="feed"></div>
+</section>
+<aside class="side" id="side"></aside>
+</main>
+<script src="lab.js"></script>
+<script>
+var L = LAB, S, st = {dir: "", tf: ""};
+function feed() {
+  var items = [];
+  S.coins.forEach(function (c) { c.new.forEach(function (s) { items.push({c: c, s: s}); }); });
+  items = items.filter(function (x) { var k = L.K[x.s.kind]; return (!st.dir || k[1] === st.dir) && (!st.tf || x.s.tf === st.tf); });
+  items.sort(function (a, b) { return b.s.t - a.s.t || a.c.rank - b.c.rank; });
+  var now = Date.now(), groups = [["Last 4 hours", 4 * 3600e3], ["Earlier today", 24 * 3600e3], ["Last 3 days", 1e15]], html = "", gi = -1;
+  items.forEach(function (x) {
+    var g = groups.findIndex(function (g) { return now - (x.s.t + {"1h": 3600e3, "4h": 4 * 3600e3, "1d": 864e5}[x.s.tf]) < g[1]; });
+    if (g !== gi) { html += '<div class="grp">' + groups[g][0] + "</div>"; gi = g; }
+    var k = L.K[x.s.kind], c = x.c, closed = x.s.t + {"1h": 3600e3, "4h": 4 * 3600e3, "1d": 864e5}[x.s.tf];
+    html += '<a class="row" href="../coin/' + c.base.toLowerCase() + '/"><span class="t">' + L.ago(closed) + "</span>" +
+      '<span class="asset">' + L.icon(c) + '<span class="n"><b>' + c.name + "</b><small>" + c.base + "</small></span></span>" +
+      '<span class="sig"><b>' + k[0] + "</b><small>" + x.s.tf + " chart</small></span>" +
+      '<span class="dir ' + (k[1] === "bull" ? "up" : "dn") + '">' + (k[1] === "bull" ? "▲ Bullish" : "▼ Bearish") + "</span>" +
+      '<span class="px"><div>' + L.usd(c.price) + '</div><small class="' + L.cls(c.change) + '">' + L.pct(c.change) + "</small></span></a>";
+  });
+  document.getElementById("feed").innerHTML = html || '<p class="faint">No signal matches.</p>';
+}
+function side() {
+  var bull = 0, bear = 0, ob = 0, os = 0;
+  S.coins.forEach(function (c) { c.new.forEach(function (s) { L.K[s.kind][1] === "bull" ? bull++ : bear++; });
+    ["1h", "4h", "1d"].forEach(function (tf) { var r = c.rsi && c.rsi[tf]; if (r >= 70) ob++; if (r !== null && r <= 30) os++; }); });
+  var tot = bull + bear || 1;
+  var most = S.coins.slice().sort(function (a, b) { return b.new.length - a.new.length || a.rank - b.rank; }).slice(0, 5);
+  var movers = S.coins.slice().sort(function (a, b) { return Math.abs(b.change) - Math.abs(a.change); }).slice(0, 5);
+  function mini(list, right) { return list.map(function (c) { return '<div><span class="asset">' + L.icon(c) + '<span class="n"><b>' + c.base + "</b></span></span>" + right(c) + "</div>"; }).join(""); }
+  document.getElementById("side").innerHTML =
+    '<div class="card"><h3>Market mood · new signals</h3><div class="big">' + bull + '<span class="faint"> / </span>' + bear + "</div>" +
+    '<div class="split"><i style="width:' + (bull / tot * 100) + '%;background:var(--up);opacity:.7"></i><i style="flex:1;background:var(--dn);opacity:.7"></i></div>' +
+    '<div class="kv"><span>Bullish</span><span>Bearish</span></div></div>' +
+    '<div class="card"><h3>RSI extremes, all charts</h3><div class="kv" style="font-size:14px"><span>Overbought (70+)</span><b style="font-weight:500">' + ob +
+    '</b></div><div class="kv" style="font-size:14px;margin-top:10px"><span>Oversold (30−)</span><b style="font-weight:500">' + os + "</b></div></div>" +
+    '<div class="card"><h3>Most signals</h3><div class="mini">' + mini(most, function (c) { return '<span class="muted">' + c.new.length + "</span>"; }) + "</div></div>" +
+    '<div class="card"><h3>Biggest moves, 24h</h3><div class="mini">' + mini(movers, function (c) { return '<span class="' + L.cls(c.change) + '">' + L.pct(c.change) + "</span>"; }) + "</div></div>";
+}
+function wire(id, key) { document.querySelectorAll("#" + id + " .pill").forEach(function (b) { b.onclick = function () {
+  st[key] = b.dataset.v; document.querySelectorAll("#" + id + " .pill").forEach(function (x) { x.classList.toggle("on", x === b); }); feed(); }; }); }
+L.load().then(function (s) { S = s; document.getElementById("upd").textContent = "updated " + new Date(s.generated).toISOString().slice(11, 16) + " UTC";
+  feed(); side(); wire("dir", "dir"); wire("tf", "tf"); });
+</script></body></html>

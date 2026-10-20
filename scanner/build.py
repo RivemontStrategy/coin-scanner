@@ -147,6 +147,8 @@ def write(out: Path, cfg: dict, refs: list[dict], data: dict, charts: dict) -> N
     for f in ("style.css", "app.js", "mark.svg"):
         shutil.copy(ROOT / "static" / f, out / "assets" / f)
     shutil.copytree(ROOT / "static" / "fonts", out / "assets" / "fonts")
+    if (ROOT / "static" / "lab").exists():                     # design concepts, not linked, noindex
+        shutil.copytree(ROOT / "static" / "lab", out / "lab")
     shutil.copy(ROOT / "static" / "CNAME", out / "CNAME")          # the custom domain (rivemont.xyz)
 
 

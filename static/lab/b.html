@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex"><title>Concept B · Markets</title>
+<link rel="stylesheet" href="lab.css">
+<style>
+.head { display: flex; justify-content: space-between; align-items: flex-end; gap: 32px; flex-wrap: wrap; padding: 56px 0 32px; }
+h1 { margin: 0; font-size: 30px; font-weight: 500; letter-spacing: -.03em; }
+.sub { margin: 8px 0 0; color: var(--faint); font-size: 14px; }
+.kpis { display: flex; gap: 52px; }
+.kpis .lbl { margin-bottom: 8px; }
+.panel { border: 1px solid var(--line); border-radius: 20px; padding: 8px 24px 12px; margin-bottom: 80px; }
+.tools { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 14px 0; }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: right; font-weight: 400; font-size: 12.5px; color: var(--faint); padding: 12px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; padding-left: 4px; }
+td { text-align: right; padding: 0 10px; height: 72px; border-bottom: 1px solid var(--line2); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+tbody tr:hover td { background: rgba(255,255,255,.015); }
+td.asset-c { text-align: left; }
+.rsi { display: inline-grid; justify-items: end; gap: 3px; min-width: 64px; }
+.rsi span { font-size: 14px; }
+.rsi .bar { width: 56px; height: 3px; border-radius: 3px; background: var(--raise); position: relative; overflow: hidden; }
+.rsi .bar i { position: absolute; top: 0; bottom: 0; left: 0; background: var(--faint); }
+.rsi.hot span { color: var(--dn); } .rsi.hot .bar i { background: var(--dn); }
+.rsi.cold span { color: var(--up); } .rsi.cold .bar i { background: var(--up); }
+.last { text-align: left; }
+.last b { font-weight: 500; font-size: 13.5px; }
+.last small { display: block; color: var(--faint); font-size: 12px; margin-top: 2px; }
+.cnt { color: var(--muted); }
+@media (max-width: 900px) {
+  .wrap, .top .in { padding: 0 16px; } .top nav, .search { display: none; }
+  .head { padding: 32px 0 20px; } .kpis { width: 100%; justify-content: space-between; gap: 0; } .kpis .big { font-size: 24px; }
+  .panel { border: 0; padding: 0; }
+  .hide-m { display: none; } td { height: 64px; padding: 0 6px; }
+}
+</style></head><body>
+<header class="top"><div class="in">
+<a class="logo" href="#"><svg viewBox="0 0 20 26"><rect width="7" height="20" fill="currentColor"/><rect x="11" y="6" width="7" height="20" fill="currentColor" opacity=".45"/></svg>RIVEMONT</a>
+<nav><a href="#">Signals</a><a class="on" href="#">Markets</a><a href="#">Learn</a></nav><span class="sp"></span>
+<input class="search" placeholder="Search a coin">
+</div></header>
+<main class="wrap">
+<section class="head"><div><h1>Markets</h1><p class="sub">Top 150 coins · RSI and the newest signal on every chart · <span id="upd"></span></p></div>
+<div class="kpis" id="kpis"></div></section>
+<section class="panel">
+<div class="tools"><div class="pills" id="f"><button class="pill on" data-v="">All coins</button><button class="pill" data-v="sig">With new signals</button><button class="pill" data-v="ob">Overbought</button><button class="pill" data-v="os">Oversold</button></div>
+<div class="pills" id="o"><button class="pill on" data-v="vol">Volume</button><button class="pill" data-v="chg">24h move</button><button class="pill" data-v="n">Signals</button></div></div>
+<table><thead><tr><th>Asset</th><th>Price</th><th>24h</th><th class="hide-m">7 days</th><th class="hide-m">RSI 1h</th><th class="hide-m">RSI 4h</th><th class="hide-m">RSI 1d</th><th class="hide-m" style="text-align:left">Newest signal</th></tr></thead>
+<tbody id="rows"></tbody></table>
+</section>
+</main>
+<script src="lab.js"></script>
+<script>
+var L = LAB, S, st = {f: "", o: "vol"};
+function rsi(v) {
+  if (v === null || v === undefined) return '<span class="faint">–</span>';
+  var c = v >= 70 ? "hot" : v <= 30 ? "cold" : "";
+  return '<span class="rsi ' + c + '"><span>' + v.toFixed(0) + '</span><span class="bar"><i style="width:' + v + '%"></i></span></span>';
+}
+function rows() {
+  var list = S.coins.filter(function (c) {
+    var r = c.rsi || {}, vals = ["1h", "4h", "1d"].map(function (t) { return r[t]; });
+    return !st.f || (st.f === "sig" && c.new.length) || (st.f === "ob" && vals.some(function (v) { return v >= 70; })) ||
+      (st.f === "os" && vals.some(function (v) { return v !== null && v <= 30; }));
+  });
+  list.sort(st.o === "chg" ? function (a, b) { return Math.abs(b.change) - Math.abs(a.change); } :
+    st.o === "n" ? function (a, b) { return b.new.length - a.new.length || a.rank - b.rank; } : function (a, b) { return a.rank - b.rank; });
+  document.getElementById("rows").innerHTML = list.map(function (c) {
+    var s = c.new.slice().sort(function (a, b) { return b.t - a.t; })[0], k = s && L.K[s.kind];
+    var last = s ? '<b class="' + (k[1] === "bull" ? "up" : "dn") + '">' + (k[1] === "bull" ? "▲ " : "▼ ") + '</b><b>' + k[0] + "</b><small>" + s.tf + " chart" +
+      (c.new.length > 1 ? " · +" + (c.new.length - 1) + " more" : "") + "</small>" : '<span class="faint">–</span>';
+    return '<tr><td class="asset-c"><a class="asset" href="../coin/' + c.base.toLowerCase() + '/">' + L.icon(c) + '<span class="n"><b>' + c.name +
+      "</b><small>" + c.base + " · " + L.compact(c.qv) + "</small></span></a></td><td>" + L.usd(c.price) + '</td><td class="' + L.cls(c.change) + '">' + L.pct(c.change) +
+      '</td><td class="hide-m">' + L.spark(c.spark, 96, 28) + '</td><td class="hide-m">' + rsi(c.rsi && c.rsi["1h"]) + '</td><td class="hide-m">' + rsi(c.rsi && c.rsi["4h"]) +
+      '</td><td class="hide-m">' + rsi(c.rsi && c.rsi["1d"]) + '</td><td class="hide-m last">' + last + "</td></tr>";
+  }).join("");
+}
+function kpis() {
+  var n = 0, bull = 0, coins = 0;
+  S.coins.forEach(function (c) { if (c.new.length) coins++; c.new.forEach(function (s) { n++; if (L.K[s.kind][1] === "bull") bull++; }); });
+  document.getElementById("kpis").innerHTML = '<div><div class="lbl">New signals</div><div class="big">' + n + "</div></div>" +
+    '<div><div class="lbl">Coins with signals</div><div class="big">' + coins + '<span class="faint"> / ' + S.coins.length + "</span></div></div>" +
+    '<div><div class="lbl">Bullish share</div><div class="big">' + Math.round(bull / (n || 1) * 100) + '<span class="faint">%</span></div></div>';
+}
+function wire(id, key) { document.querySelectorAll("#" + id + " .pill").forEach(function (b) { b.onclick = function () {
+  st[key] = b.dataset.v; document.querySelectorAll("#" + id + " .pill").forEach(function (x) { x.classList.toggle("on", x === b); }); rows(); }; }); }
+L.load().then(function (s) { S = s; document.getElementById("upd").textContent = "updated " + new Date(s.generated).toISOString().slice(11, 16) + " UTC";
+  kpis(); rows(); wire("f", "f"); wire("o", "o"); });
+</script></body></html>

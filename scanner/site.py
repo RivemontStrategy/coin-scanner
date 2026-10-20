@@ -332,4 +332,4 @@ def sitemap(ctx: Ctx) -> str:
 
 
 def robots(ctx: Ctx) -> str:
-    return f"User-agent: *\nAllow: /\nSitemap: {ctx.url('sitemap.xml')}\n"
+    return f"User-agent: *\nAllow: /\nDisallow: /lab/\nSitemap: {ctx.url('sitemap.xml')}\n"
