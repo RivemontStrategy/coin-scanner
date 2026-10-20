@@ -10,11 +10,5 @@
   ],
   "bars": 200,
   "history_limit": 40,
-  "every_min": 15,
-  "cron_minutes": [
-    2,
-    17,
-    32,
-    47
-  ]
+  "every_min": 15
 }

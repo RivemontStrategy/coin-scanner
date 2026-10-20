@@ -125,7 +125,7 @@ def page(ctx: Ctx, path: str, title: str, desc: str, body: str, ld: dict | None 
 <link rel="stylesheet" href="{a('style.css')}">
 {head_extra}{ld_html}
 </head>
-<body data-cron="{",".join(str(m) for m in ctx.cfg.get("cron_minutes", [2, 17, 32, 47]))}" data-gen="{gen}">
+<body data-every="{ctx.cfg.get("every_min", 15)}" data-gen="{gen}">
 <header class="top"><div class="wrap">
 <a class="brand" href="{ctx.href()}" aria-label="{escape(ctx.name)} home">{LOGO}<span>{escape(ctx.name.upper())}</span></a>
 <nav><a href="{ctx.href()}">Scanner</a><a href="{ctx.href('signals/')}">Signals</a>

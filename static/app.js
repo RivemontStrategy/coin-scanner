@@ -19,15 +19,10 @@
     return m < 1 ? "just now" : m < 60 ? m + " min ago" : m < 1440 ? Math.round(m / 60) + " h ago" : Math.round(m / 1440) + " days ago";
   }
   function nextScan() {
-    // the scan runs at these minutes past each hour (UTC) and takes about 3 minutes
-    var mins = (document.body.dataset.cron || "2,17,32,47").split(",").map(Number), now = new Date(), best = null;
-    for (var h = 0; h < 2 && best === null; h++) {
-      for (var i = 0; i < mins.length; i++) {
-        var t = new Date(now); t.setUTCHours(now.getUTCHours() + h, mins[i] + 3, 0, 0);
-        if (t > now && Number(document.body.dataset.gen) < t.getTime() - 4 * 60000) { best = t; break; }
-      }
-    }
-    return best ? Math.max(1, Math.round((best - now) / 60000)) : null;
+    // a new scan is published about every 15 minutes after the last one
+    var every = Number(document.body.dataset.every || 15), gen = Number(document.body.dataset.gen);
+    var left = Math.round((gen + (every + 1) * 60000 - Date.now()) / 60000);
+    return left >= 1 ? left : null;
   }
   function tick() {
     document.querySelectorAll("time.ago").forEach(function (el) { el.textContent = agoText(Number(el.dataset.ts)); });

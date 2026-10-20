@@ -1,0 +1,43 @@
+# One scan round: optional wait, fetch prices, compute the signals, build the site, publish it on GitHub Pages.
+# Called four times in a row by scan.yml, because GitHub's own schedule often skips runs on busy hours.
+name: scan round
+on:
+  workflow_call:
+    inputs:
+      wait_min:
+        type: number
+        default: 0
+      round:
+        type: string
+        default: "1"
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Wait for the next slot
+        if: ${{ inputs.wait_min > 0 }}
+        run: sleep $(( ${{ inputs.wait_min }} * 60 ))
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Unit tests
+        run: python -m unittest discover -s tests
+      - name: Scan and build the site
+        run: python -m scanner.build --out _site
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+          name: github-pages-${{ inputs.round }}
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages-${{ inputs.round }}
