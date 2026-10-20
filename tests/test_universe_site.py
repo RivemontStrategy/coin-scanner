@@ -65,7 +65,7 @@ class Pages(unittest.TestCase):
 
     def write(self, refs):
         d = Path(tempfile.mkdtemp())
-        build.write(d, self.cfg, refs, self.data, {"ABC": {"4h": "<svg></svg>"}})
+        build.write(d, self.cfg, refs, self.data, {"ABC": {"4h": {"c": [[1, 1, 2, 0.5, 1.5]], "m": [[1, "bull", "RSI < 30"]]}}})
         return d
 
     def test_every_page_and_file(self):
@@ -76,7 +76,14 @@ class Pages(unittest.TestCase):
             self.assertTrue((d / rel).exists(), rel)
         home = (d / "index.html").read_text()
         self.assertIn('<link rel="canonical" href="https://example.github.io/coin-scanner/">', home)
-        self.assertIn('href="/coin-scanner/coin/abc/"', home)
+        self.assertIn('href="coin/abc/"', home)                                 # relative: works on any host
+        coin = (d / "coin/abc/index.html").read_text()
+        self.assertIn('href="../../assets/style.css?v=', coin)
+        self.assertIn('href="../../signals/rsi-oversold/"', coin)
+        self.assertIn("lightweight-charts@4.2.3", coin)
+        self.assertIn('href="/assets/style.css?v=', (d / "404.html").read_text())   # 404 is served at any depth
+        self.assertEqual((d / "CNAME").read_text().strip(), "rivemont.xyz")
+        self.assertTrue((d / "assets/fonts/geist-var-latin.woff2").exists())
         self.assertIn("Not financial advice", home)
         self.assertIn('data-price="ABCUSDT">$9.50<', home)                     # dollars, and live-updatable
         self.assertIn("Signals updated", home)
@@ -104,7 +111,8 @@ class Pages(unittest.TestCase):
         d = self.write([])
         for p in d.rglob("*.html"):
             html = p.read_text()
-            for bad in ("google-analytics", "googletagmanager", "gtag(", "facebook.net", "fonts.googleapis", "<iframe"):
+            for bad in ("google-analytics", "googletagmanager", "gtag(", "facebook.net", "fonts.googleapis", "<iframe",
+                        "doubleclick", "plausible", "clarity.ms", "hotjar"):
                 self.assertNotIn(bad, html, f"{bad} in {p}")
 
     def test_referral_buttons_only_with_a_link(self):
@@ -122,3 +130,11 @@ class Pages(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class LiveConfig(unittest.TestCase):
+    def test_the_site_is_rivemont_at_the_domain_root(self):
+        cfg, _ = build.load_config()
+        self.assertEqual(cfg["base_url"], "https://rivemont.xyz/")
+        self.assertEqual(cfg["name"], "Rivemont")
+        self.assertEqual((Path(build.ROOT) / "static" / "CNAME").read_text().strip(), "rivemont.xyz")

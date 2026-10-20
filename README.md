@@ -1,4 +1,6 @@
-# Coin Scanner
+# Rivemont: free crypto signal scanner
+
+Live at https://rivemont.xyz (GitHub Pages, custom domain; `static/CNAME`).
 
 A free, static crypto signal scanner. Every 15 minutes a GitHub Actions job reads public market data for the top 150
 USDT spot pairs (by 24-hour volume, without the non-coins listed in `config/exclude.json` and leveraged tokens), computes signals on the 1-hour, 4-hour
@@ -41,9 +43,18 @@ prints which ones answer (the `probe data sources` workflow runs it on a GitHub 
 
 Python 3.11+, standard library only.
 
+## Design
+
+The Rivemont design system of 2026-10-12: light by default (the switch at the top right remembers a choice), Geist
+for text and Geist Mono for figures (self-hosted, OFL, `static/fonts`), Manrope only for the wordmark, one orange
+accent used sparingly, green and red only on numbers, hairlines and pill-shaped filters. Coin pages draw a candle
+chart with lightweight-charts 4.2.3 (jsDelivr) and mark each signal on its candle; coin icons come from CoinCap's
+public icon CDN, with a letter badge when a coin has none.
+
 ## Settings
 
-- `config/site.json`: the site name (temporary: "Coin Scanner"), tagline, address (`base_url`), number of coins,
+- `config/site.json`: the site name ("Rivemont"), tagline, address (`base_url`, used for canonical, Open Graph and the
+  sitemap; links between pages are relative, so the build also works at the github.io address), number of coins,
   timeframes. `SITE_URL` / `SITE_NAME` environment variables override them.
 - `config/exclude.json`: stablecoins, tokenized stocks and ETFs, gold tokens and wrapped duplicates kept out of the
   list (the build log prints a `check:` line for new stock-like tickers ending in B).

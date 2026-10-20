@@ -7,9 +7,10 @@
   // ---------------------------------------------------------------- theme
   var tb = document.querySelector(".theme");
   if (tb) tb.addEventListener("click", function () {
-    var d = document.documentElement, t = d.dataset.theme === "light" ? "dark" : "light";
+    var d = document.documentElement, t = d.dataset.theme === "dark" ? "light" : "dark";
     d.dataset.theme = t;
-    try { localStorage.setItem("cs-theme", t); } catch (e) {}
+    try { localStorage.setItem("rv-theme", t); } catch (e) {}
+    document.dispatchEvent(new Event("rv-theme"));
   });
 
   // ---------------------------------------------------------------- times
@@ -83,7 +84,7 @@
   function liveLabel() {
     var s = lastOk ? Math.round((Date.now() - lastOk) / 1000) : null;
     liveEls.forEach(function (el) {
-      el.textContent = s === null ? "Live prices unavailable" : "Live prices · " + (source === "okx" ? "OKX" : "Binance") + " · " + (s < 5 ? "just now" : s + " s ago");
+      el.textContent = s === null ? "Live prices unavailable" : "Live prices · " + (s < 5 ? "just now" : s + " s ago");
       el.classList.toggle("on", s !== null && s < 120);
     });
   }
@@ -134,52 +135,97 @@
   document.addEventListener("keydown", function (e) { if (e.key === "Escape") hideTip(); });
   window.addEventListener("scroll", function () { if (tipFor && !matchMedia("(hover: hover)").matches) return; hideTip(); }, {passive: true});
 
-  // ---------------------------------------------------------------- home: filter and sort
+  // ---------------------------------------------------------------- coin page: the candle chart with its signals
+  var cd = $("chart-data"), box = $("chart");
+  if (cd && box) {
+    var D = JSON.parse(cd.textContent).tfs, tf = "4h", chart = null;
+    var css = function (n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); };
+    var draw = function () {
+      var d = D[tf];
+      if (!window.LightweightCharts || !d) { box.innerHTML = '<p class="fine">The chart could not load.</p>'; return; }
+      if (chart) { chart.remove(); chart = null; }
+      box.innerHTML = "";
+      var last = d.c.length ? d.c[d.c.length - 1][4] : 1, p = Math.max(0, Math.min(8, 4 - Math.floor(Math.log10(Math.abs(last) || 1))));
+      chart = LightweightCharts.createChart(box, {
+        autoSize: true,
+        layout: {background: {type: "solid", color: css("--surface")}, textColor: css("--faint"), fontFamily: "Geist Mono, ui-monospace, monospace", fontSize: 11},
+        grid: {vertLines: {visible: false}, horzLines: {color: css("--line-2")}},
+        rightPriceScale: {borderVisible: false, scaleMargins: {top: 0.12, bottom: 0.08}},
+        timeScale: {borderVisible: false, timeVisible: tf !== "1d", secondsVisible: false},
+        crosshair: {mode: 0, vertLine: {color: css("--line"), labelBackgroundColor: css("--text")}, horzLine: {color: css("--line"), labelBackgroundColor: css("--text")}},
+        handleScroll: {vertTouchDrag: false},
+        localization: {priceFormatter: function (v) { return v.toLocaleString("en-US", {minimumFractionDigits: p, maximumFractionDigits: p}); }}
+      });
+      var up = css("--up"), dn = css("--dn");
+      var series = chart.addCandlestickSeries({upColor: up, downColor: dn, wickUpColor: up, wickDownColor: dn, borderVisible: false,
+        priceFormat: {type: "price", precision: p, minMove: Math.pow(10, -p)}});
+      series.setData(d.c.map(function (r) { return {time: r[0], open: r[1], high: r[2], low: r[3], close: r[4]}; }));
+      series.setMarkers(d.m.slice().sort(function (a, b) { return a[0] - b[0]; }).map(function (m) {
+        var bull = m[1] === "bull";
+        return {time: m[0], position: bull ? "belowBar" : "aboveBar", color: bull ? up : dn, shape: bull ? "arrowUp" : "arrowDown", size: 0.8};
+      }));
+      chart.timeScale().fitContent();
+    };
+    document.querySelectorAll(".tabs button").forEach(function (b) {
+      b.addEventListener("click", function () {
+        tf = b.dataset.tf;
+        document.querySelectorAll(".tabs button").forEach(function (x) { x.classList.toggle("on", x === b); });
+        draw();
+      });
+    });
+    document.addEventListener("rv-theme", draw);
+    if (window.LightweightCharts) draw(); else window.addEventListener("load", draw);
+  }
+
+  // ---------------------------------------------------------------- home: filters and sorting
   var body = document.querySelector("table.coins tbody");
   if (!body || !$("q")) return;
   var rows = Array.prototype.slice.call(body.rows);
-  var KEY = "cs-filters";
+  var KEY = "rv-filters", st = {kind: "", tf: "", dir: "", only: false, sort: "rank"};
+  try { var saved = JSON.parse(localStorage.getItem(KEY) || "{}"); Object.keys(st).forEach(function (k) { if (k in saved) st[k] = saved[k]; }); } catch (e) {}
 
   function apply() {
-    var q = $("q").value.trim().toUpperCase(), kind = $("f-kind").value, tf = $("f-tf").value, dir = $("f-dir").value;
-    var only = $("f-only").checked, sigFilter = !!(kind || tf || dir), shown = 0;
+    var q = $("q").value.trim().toUpperCase(), sigFilter = !!(st.kind || st.tf || st.dir), shown = 0;
     rows.forEach(function (r) {
-      var chips = r.querySelectorAll(".chip"), hit = 0;
-      chips.forEach(function (c) {
-        var ok = (!kind || c.dataset.kind === kind) && (!tf || c.dataset.tf === tf) && (!dir || c.dataset.dir === dir);
+      var hit = 0;
+      r.querySelectorAll(".chip").forEach(function (c) {
+        var ok = (!st.kind || c.dataset.kind === st.kind) && (!st.tf || c.dataset.tf === st.tf) && (!st.dir || c.dataset.dir === st.dir);
         c.classList.toggle("dim", sigFilter && !ok);
         if (ok) hit++;
       });
-      var vis = (!q || r.dataset.sym.indexOf(q) === 0) && (!(only || sigFilter) || hit > 0);
+      var vis = (!q || r.dataset.sym.indexOf(q) === 0) && (!(st.only || sigFilter) || hit > 0);
       r.hidden = !vis;
       if (vis) shown++;
     });
-    $("count").textContent = shown + " of " + rows.length + " coins";
-    try { localStorage.setItem(KEY, JSON.stringify({kind: kind, tf: tf, dir: dir, only: only, sort: $("sort").value})); } catch (e) {}
+    $("count").textContent = shown === rows.length ? rows.length + " coins" : shown + " of " + rows.length + " coins";
+    $("none").hidden = shown > 0;
+    document.querySelectorAll(".kinds .pill").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.k === st.kind)); });
+    document.querySelectorAll(".seg[data-g]").forEach(function (g) {
+      g.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", b.dataset.v === st[g.dataset.g]); });
+    });
+    $("f-only").checked = st.only;
+    try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {}
   }
-
   function sort() {
-    var s = $("sort").value, num = function (r, k) { return Number(r.dataset[k]); };
+    var num = function (r, k) { return Number(r.dataset[k]); };
     var cmp = {
       rank: function (a, b) { return num(a, "rank") - num(b, "rank"); },
       n: function (a, b) { return num(b, "n") - num(a, "n") || num(a, "rank") - num(b, "rank"); },
       "chg-desc": function (a, b) { return num(b, "chg") - num(a, "chg"); },
       "chg-asc": function (a, b) { return num(a, "chg") - num(b, "chg"); },
       sym: function (a, b) { return a.dataset.sym < b.dataset.sym ? -1 : 1; }
-    }[s] || function () { return 0; };
+    }[st.sort] || function () { return 0; };
     rows.sort(cmp).forEach(function (r) { body.appendChild(r); });
   }
-
-  try {
-    var saved = JSON.parse(localStorage.getItem(KEY) || "{}");
-    ["kind", "tf", "dir", "sort"].forEach(function (k) {
-      var el = $(k === "sort" ? "sort" : "f-" + k);
-      if (saved[k] && el.querySelector('option[value="' + saved[k] + '"]')) el.value = saved[k];
-    });
-    $("f-only").checked = !!saved.only;
-  } catch (e) {}
-
-  ["q", "f-kind", "f-tf", "f-dir", "f-only"].forEach(function (id) { $(id).addEventListener("input", apply); $(id).addEventListener("change", apply); });
-  $("sort").addEventListener("change", function () { sort(); apply(); });
+  document.querySelectorAll(".kinds .pill").forEach(function (b) {
+    b.addEventListener("click", function () { st.kind = st.kind === b.dataset.k ? "" : b.dataset.k; apply(); });
+  });
+  document.querySelectorAll(".seg[data-g] button").forEach(function (b) {
+    b.addEventListener("click", function () { st[b.parentNode.dataset.g] = b.dataset.v; apply(); });
+  });
+  $("f-only").addEventListener("change", function () { st.only = $("f-only").checked; apply(); });
+  $("q").addEventListener("input", apply);
+  if ($("sort").querySelector('option[value="' + st.sort + '"]')) $("sort").value = st.sort;
+  $("sort").addEventListener("change", function () { st.sort = $("sort").value; sort(); apply(); });
   sort(); apply();
 })();

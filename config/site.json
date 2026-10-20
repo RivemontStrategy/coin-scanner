@@ -1,7 +1,7 @@
 {
-  "name": "Coin Scanner",
-  "tagline": "Free crypto signal scanner: RSI, trend changes, double tops and bottoms, volume spikes and 30-day breakouts on the top 150 coins.",
-  "base_url": "https://rivemontstrategy.github.io/coin-scanner/",
+  "name": "Rivemont",
+  "tagline": "Free crypto signal scanner",
+  "base_url": "https://rivemont.xyz/",
   "top_n": 150,
   "timeframes": [
     "1h",

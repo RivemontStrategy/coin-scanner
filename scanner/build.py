@@ -15,12 +15,12 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from . import chart, site, sources, universe
+from . import site, sources, universe
 from .signals import KINDS, is_new, scan
 
 ROOT = Path(__file__).resolve().parents[1]
 FETCH = 400            # candles fetched per chart: the 200-bar EMA needs history before the 200 bars shown
-CHART_BARS = 120       # candles drawn on a coin's chart
+CHART_BARS = 200       # candles on a coin's chart
 SOURCE_LABEL = {"binance": "Binance", "okx": "OKX", "gate": "Gate", "mexc": "MEXC"}
 
 
@@ -68,6 +68,14 @@ def analyse(src: sources.Source, pair: dict, tfs: list[str], keep: int, hist_lim
     return coin, bars_by_tf, sigs_by_tf
 
 
+def chart_data(bars, sigs) -> dict:
+    """What a coin page's chart draws: candles [time s, open, high, low, close] and signal markers [time s, "bull" or
+    "bear", label], compact enough to sit in the page."""
+    r = lambda x: float(f"{x:.6g}")                                  # noqa: E731 - 6 significant digits
+    return {"c": [[b.t // 1000, r(b.o), r(b.h), r(b.l), r(b.c)] for b in bars],
+            "m": [[s.t // 1000, KINDS[s.kind].direction, KINDS[s.kind].short] for s in sigs]}
+
+
 def latest_per_kind(sigs: list[dict]) -> list[dict]:
     """One signal per timeframe and kind: the most recent (a double top confirmed twice in 3 candles shows once)."""
     best: dict[tuple, dict] = {}
@@ -106,8 +114,7 @@ def run(out: Path, log=print) -> dict:
     for rank, (_i, (coin, bars_by_tf, sigs_by_tf)) in enumerate(done, 1):
         coin["rank"] = rank
         coins.append(coin)
-        charts[coin["base"]] = {tf: chart.svg(b, sigs_by_tf[tf], label=f'{coin["base"]} {tf} candles')
-                                for tf, b in bars_by_tf.items()}
+        charts[coin["base"]] = {tf: chart_data(b, sigs_by_tf[tf]) for tf, b in bars_by_tf.items()}
     data = {"generated": int(time.time() * 1000), "source": src.name, "every_min": cfg.get("every_min", 15),
             "source_label": SOURCE_LABEL.get(src.name, src.name), "timeframes": tfs, "coins": coins}
     write(out, cfg, refs, data, charts)
@@ -137,8 +144,10 @@ def write(out: Path, cfg: dict, refs: list[dict], data: dict, charts: dict) -> N
     put("robots.txt", site.robots(ctx))
     put("data/scan.json", json.dumps(data, separators=(",", ":")))
     put(".nojekyll", "")
-    for f in ("style.css", "app.js"):
+    for f in ("style.css", "app.js", "mark.svg"):
         shutil.copy(ROOT / "static" / f, out / "assets" / f)
+    shutil.copytree(ROOT / "static" / "fonts", out / "assets" / "fonts")
+    shutil.copy(ROOT / "static" / "CNAME", out / "CNAME")          # the custom domain (rivemont.xyz)
 
 
 def main(argv=None) -> int:
