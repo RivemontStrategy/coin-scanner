@@ -162,7 +162,7 @@ and can be wrong or late.</p>
 def compact_usd(x: float) -> str:
     for div, unit in ((1e9, "B"), (1e6, "M"), (1e3, "K")):
         if x >= div:
-            return f"${x / div:.2f}{unit}" if x / div < 100 else f"${x / div:.0f}{unit}"
+            return f"${x / div:.1f}{unit}" if x / div < 100 else f"${x / div:.0f}{unit}"
     return f"${x:.0f}"
 
 

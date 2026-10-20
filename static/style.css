@@ -110,7 +110,9 @@ h2 { font-size: 20px; font-weight: 600; letter-spacing: -0.025em; margin: 48px 0
 .tog:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
 #q, .sel { height: 34px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--text);
   font: 13px var(--font); padding: 0 14px; }
-#q { width: 180px; }
+#q { width: 150px; }
+#kind { max-width: 200px; }
+.bar .seg button { padding: 0 12px; }
 .sel option { background: var(--bg); color: var(--text); }
 .sel { padding-right: 28px; appearance: none; -webkit-appearance: none; cursor: pointer;
   background-image: linear-gradient(45deg, transparent 50%, var(--faint) 50%), linear-gradient(135deg, var(--faint) 50%, transparent 50%);
