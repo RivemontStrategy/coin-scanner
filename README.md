@@ -2,7 +2,7 @@
 
 Live at https://rivemont.xyz (GitHub Pages, custom domain; `static/CNAME`).
 
-A free, static crypto signal scanner. Every 15 minutes a GitHub Actions job reads public market data for the top 150
+A free, static crypto signal scanner. Every 15 minutes a GitHub Actions job (a self-continuing chain, see Publishing) reads public market data for the top 150
 USDT spot pairs (by 24-hour volume, without the non-coins listed in `config/exclude.json` and leveraged tokens), computes signals on the 1-hour, 4-hour
 and daily candles, builds a static site and publishes it on GitHub Pages. No server, no database, no trackers, no cost.
 
@@ -62,10 +62,17 @@ public icon CDN, with a letter badge when a coin has none.
 
 ## Publishing (one-time)
 
-Settings → Pages → Build and deployment → Source: **GitHub Actions**. The `scan and publish` workflow then runs on
-every push to `main`, every 15 minutes (minutes 2, 17, 32, 47), and on demand (Actions → scan and publish → Run workflow).
+Settings → Pages → Build and deployment → Source: **GitHub Actions**; custom domain `rivemont.xyz` (file `static/CNAME`,
+Cloudflare DNS: apex and `www` CNAME to `rivemontstrategy.github.io`, DNS only), Enforce HTTPS on.
 
-GitHub pauses scheduled workflows in a public repository after 60 days without any repository activity; a commit
-(or re-enabling the workflow in the Actions tab) starts them again.
+How it keeps running: `scan and publish` (`.github/workflows/scan.yml`) builds and publishes once (`scan-round.yml`),
+then its `next` job waits until about 15 minutes after the run began and starts the next run itself
+(`gh workflow run`, allowed with `GITHUB_TOKEN`). It skips that when another run is already waiting, so there is only
+ever one chain. GitHub's own schedule (minutes 7 and 37) drops many slots and is only there to restart the chain if it
+breaks; a push to `main` or Actions → scan and publish → Run workflow also restarts it. If a run fails, the last
+published site stays up.
+
+GitHub pauses scheduled workflows in a public repository after 60 days without any repository activity; the chain
+does not depend on the schedule, and a commit (or re-enabling the workflow in the Actions tab) starts the schedule again.
 
 Not financial advice.
