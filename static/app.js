@@ -149,7 +149,7 @@
         timeScale: {borderVisible: false, timeVisible: tf !== "1d", secondsVisible: false},
         crosshair: {mode: 0, vertLine: {color: css("--line"), labelBackgroundColor: css("--text")}, horzLine: {color: css("--line"), labelBackgroundColor: css("--text")}},
         handleScroll: {vertTouchDrag: false},
-        localization: {priceFormatter: function (v) { return v.toLocaleString("en-US", {minimumFractionDigits: p, maximumFractionDigits: p}); }}
+        localization: {locale: "en-US", priceFormatter: function (v) { return v.toLocaleString("en-US", {minimumFractionDigits: p, maximumFractionDigits: p}); }}
       });
       var up = css("--up"), dn = css("--dn");
       var series = chart.addCandlestickSeries({upColor: up, downColor: dn, wickUpColor: up, wickDownColor: dn, borderVisible: false,
