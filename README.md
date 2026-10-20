@@ -45,11 +45,13 @@ Python 3.11+, standard library only.
 
 ## Design
 
-The Rivemont design (monotone since 2026-10-20): near-black by default with a white light theme (the switch at the top right remembers a choice), Geist
-for text and Geist Mono for figures (self-hosted, OFL, `static/fonts`), Manrope only for the wordmark, no accent colour,
-muted green and red only on numbers, coin logos toned down, hairlines and pill-shaped filters. Coin pages draw a candle
-chart with lightweight-charts 4.2.3 (jsDelivr) and mark each signal on its candle; coin icons come from CoinCap's
-public icon CDN, with a letter badge when a coin has none.
+Owner's pick of 2026-10-20 (concept B "Markets"): a soft charcoal monotone by default (#1f2023 background, light grey
+text, no pure black or white) with a stone light theme behind the switch at the top right; no accent colour, muted green
+and red only on numbers that go up or down. Pages: Markets (home: one framed table with the coin name over its ticker,
+price, 24h, a 7-day line from our own hourly closes, RSI on 1h/4h/1d with a small bar, and the newest signal), Signals
+(the feed of what just changed, newest first, with a mood summary), Learn (the twelve signals explained), one page per
+signal type, one per coin (candle chart with the signals). Coin names and logos come from CoinGecko's public markets
+list at build time (`scanner/names.py`); without it the ticker and CoinCap's icon are used. Geist (self-hosted, OFL).
 
 ## Settings
 

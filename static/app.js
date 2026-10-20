@@ -1,22 +1,43 @@
-// Filters, sorting, chip details, live prices, "updated N min ago" and the theme switch. No tracking: the only
-// requests are to public exchange price endpoints (Binance's data mirror, OKX as a fallback).
+// Markets filters and sorting, the signals feed filters, coin search, live prices, "N min ago", the candle chart and
+// the theme switch. No tracking: the only requests are to public exchange price endpoints (Binance's data mirror, OKX
+// as a fallback) and, on coin pages, the chart library.
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   var LIVE_MS = 45000;
+  var root = document.body.dataset.root || "./";
 
-  // ---------------------------------------------------------------- theme
+  // ---------------------------------------------------------------- theme: soft charcoal, or stone
   var tb = document.querySelector(".theme");
   if (tb) tb.addEventListener("click", function () {
-    var d = document.documentElement, t = d.dataset.theme === "dark" ? "light" : "dark";
+    var d = document.documentElement, t = d.dataset.theme === "stone" ? "charcoal" : "stone";
     d.dataset.theme = t;
     try { localStorage.setItem("rv-theme", t); } catch (e) {}
     document.dispatchEvent(new Event("rv-theme"));
   });
 
+  // ---------------------------------------------------------------- search a coin
+  var find = $("find");
+  if (find) {
+    var opts = Array.prototype.map.call(document.querySelectorAll("#coins option"), function (o) { return [o.value, o.textContent]; });
+    var go = function () {
+      var q = find.value.trim().toUpperCase(); if (!q) return;
+      var hit = opts.filter(function (o) { return o[0].toUpperCase() === q || o[1].toUpperCase() === q; })[0] ||
+        opts.filter(function (o) { return o[0].toUpperCase().indexOf(q) === 0 || o[1].toUpperCase().indexOf(q) === 0; })[0];
+      if (hit) location.href = root.replace(/\/?$/, "/").replace(/^\.\/$/, "") + "coin/" + hit[0].toLowerCase() + "/";
+    };
+    find.form.addEventListener("submit", function (e) { e.preventDefault(); go(); });
+    find.addEventListener("change", function () { if (opts.some(function (o) { return o[0] === find.value; })) go(); });
+    find.addEventListener("input", function () { document.dispatchEvent(new Event("rv-find")); });
+  }
+
   // ---------------------------------------------------------------- times
   function agoText(ms) {
     var m = Math.max(0, Math.round((Date.now() - ms) / 60000));
     return m < 1 ? "just now" : m < 60 ? m + " min ago" : m < 1440 ? Math.round(m / 60) + " h ago" : Math.round(m / 1440) + " days ago";
+  }
+  function agoShort(ms) {
+    var m = Math.max(1, Math.round((Date.now() - ms) / 60000));
+    return m < 60 ? m + "m" : m < 1440 ? Math.round(m / 60) + "h" : Math.round(m / 1440) + "d";
   }
   function nextScan() {
     // a new scan is published about every 15 minutes after the last one
@@ -25,7 +46,9 @@
     return left >= 1 ? left : null;
   }
   function tick() {
-    document.querySelectorAll("time.ago").forEach(function (el) { el.textContent = agoText(Number(el.dataset.ts)); });
+    document.querySelectorAll("time.ago").forEach(function (el) {
+      el.textContent = el.classList.contains("t") ? agoShort(Number(el.dataset.ts)) : agoText(Number(el.dataset.ts));
+    });
     var n = nextScan();
     document.querySelectorAll("[data-next]").forEach(function (el) { el.textContent = n === null ? "a few" : n; });
   }
@@ -96,40 +119,6 @@
     document.addEventListener("visibilitychange", function () { if (!document.hidden && Date.now() - lastOk > LIVE_MS) refresh(); });
   }
 
-  // ---------------------------------------------------------------- chip details (hover on a computer, tap on a phone)
-  var tip = document.createElement("div");
-  tip.className = "tip"; tip.hidden = true; tip.setAttribute("role", "tooltip");
-  document.body.appendChild(tip);
-  var tipFor = null;
-  function showTip(chip) {
-    tipFor = chip;
-    tip.innerHTML = "";
-    var b = document.createElement("b"); b.textContent = chip.dataset.title; tip.appendChild(b);
-    var w = document.createElement("span"); w.textContent = chip.dataset.when + " (" + agoText(Number(chip.dataset.t)) + ")"; tip.appendChild(w);
-    if (chip.dataset.href) { var a = document.createElement("a"); a.href = chip.dataset.href; a.textContent = "Open the chart →"; tip.appendChild(a); }
-    tip.hidden = false;
-    var r = chip.getBoundingClientRect(), tw = tip.offsetWidth;
-    tip.style.left = Math.max(8, Math.min(window.innerWidth - tw - 8, r.left + window.scrollX)) + "px";
-    tip.style.top = (r.bottom + window.scrollY + 6) + "px";
-  }
-  function hideTip() { tip.hidden = true; tipFor = null; }
-  document.addEventListener("click", function (e) {
-    var c = e.target.closest("button.chip");
-    if (c) { if (tipFor === c) hideTip(); else showTip(c); return; }
-    if (!e.target.closest(".tip")) hideTip();
-  });
-  document.addEventListener("mouseover", function (e) {
-    var c = e.target.closest && e.target.closest("button.chip");
-    if (c && matchMedia("(hover: hover)").matches) showTip(c);
-  });
-  document.addEventListener("mouseout", function (e) {
-    var c = e.target.closest && e.target.closest("button.chip");
-    if (c && matchMedia("(hover: hover)").matches && !(e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest(".tip"))) hideTip();
-  });
-  tip.addEventListener("mouseleave", function () { if (matchMedia("(hover: hover)").matches) hideTip(); });
-  document.addEventListener("keydown", function (e) { if (e.key === "Escape") hideTip(); });
-  window.addEventListener("scroll", function () { if (tipFor && !matchMedia("(hover: hover)").matches) return; hideTip(); }, {passive: true});
-
   // ---------------------------------------------------------------- coin page: the candle chart with its signals
   var cd = $("chart-data"), box = $("chart");
   if (cd && box) {
@@ -161,10 +150,10 @@
       }));
       chart.timeScale().fitContent();
     };
-    document.querySelectorAll(".tabs button").forEach(function (b) {
+    document.querySelectorAll(".tabs .pill").forEach(function (b) {
       b.addEventListener("click", function () {
         tf = b.dataset.tf;
-        document.querySelectorAll(".tabs button").forEach(function (x) { x.classList.toggle("on", x === b); });
+        document.querySelectorAll(".tabs .pill").forEach(function (x) { x.classList.toggle("on", x === b); });
         draw();
       });
     });
@@ -172,54 +161,61 @@
     if (window.LightweightCharts) draw(); else window.addEventListener("load", draw);
   }
 
-  // ---------------------------------------------------------------- home: filters and sorting
-  var body = document.querySelector("table.coins tbody");
-  if (!body || !$("q")) return;
-  var rows = Array.prototype.slice.call(body.rows);
-  var KEY = "rv-filters", st = {kind: "", tf: "", dir: "", only: false, sort: "rank"};
-  try { var saved = JSON.parse(localStorage.getItem(KEY) || "{}"); Object.keys(st).forEach(function (k) { if (k in saved) st[k] = saved[k]; }); } catch (e) {}
+  // ---------------------------------------------------------------- pill groups
+  function pills(group, st, onchange) {
+    document.querySelectorAll('.pills[data-g="' + group + '"] .pill').forEach(function (b) {
+      b.addEventListener("click", function () { st[group] = b.dataset.v; onchange(); });
+    });
+  }
+  function mark(st) {
+    document.querySelectorAll(".pills[data-g]").forEach(function (g) {
+      g.querySelectorAll(".pill").forEach(function (b) { b.classList.toggle("on", b.dataset.v === st[g.dataset.g]); });
+    });
+  }
 
-  if (st.only && !$("f-only")) { st.only = false; if (!st.kind) st.kind = "*"; }
-  function apply() {
-    var q = $("q").value.trim().toUpperCase(), kind = st.kind === "*" ? "" : st.kind, sigFilter = !!(st.kind || st.tf || st.dir), shown = 0;
-    rows.forEach(function (r) {
-      var hit = 0;
-      r.querySelectorAll(".chip").forEach(function (c) {
-        var ok = (!kind || c.dataset.kind === kind) && (!st.tf || c.dataset.tf === st.tf) && (!st.dir || c.dataset.dir === st.dir);
-        c.classList.toggle("dim", sigFilter && !ok);
-        if (ok) hit++;
+  // ---------------------------------------------------------------- Markets: filters, sorting, search
+  var mk = document.querySelector("table.mk tbody");
+  if (mk && $("count")) {
+    var rows = Array.prototype.slice.call(mk.rows), KEY = "rv-markets", ms = {f: "", o: "rank"};
+    try { var sv = JSON.parse(localStorage.getItem(KEY) || "{}"); if (typeof sv.f === "string") ms.f = sv.f; if (typeof sv.o === "string") ms.o = sv.o; } catch (e) {}
+    var applyMk = function () {
+      var q = find ? find.value.trim().toUpperCase() : "", shown = 0;
+      var num = function (r, k) { return Number(r.dataset[k]); };
+      var cmp = {rank: function (a, b) { return num(a, "rank") - num(b, "rank"); },
+        chg: function (a, b) { return Math.abs(num(b, "chg")) - Math.abs(num(a, "chg")); },
+        n: function (a, b) { return num(b, "n") - num(a, "n") || num(a, "rank") - num(b, "rank"); }}[ms.o] || function () { return 0; };
+      rows.sort(cmp).forEach(function (r) { mk.appendChild(r); });
+      rows.forEach(function (r) {
+        var vis = (!q || r.dataset.sym.indexOf(q) === 0 || r.dataset.name.indexOf(q) === 0) &&
+          (!ms.f || (ms.f === "sig" && num(r, "n") > 0) || (ms.f === "ob" && r.dataset.ob === "1") || (ms.f === "os" && r.dataset.os === "1"));
+        r.hidden = !vis; if (vis) shown++;
       });
-      var vis = (!q || r.dataset.sym.indexOf(q) === 0) && (!(st.only || sigFilter) || hit > 0);
-      r.hidden = !vis;
-      if (vis) shown++;
-    });
-    $("count").textContent = shown === rows.length ? rows.length + " coins" : shown + " of " + rows.length + " coins";
-    $("none").hidden = shown > 0;
-    if ($("kind")) { if (!$("kind").querySelector('option[value="' + st.kind + '"]')) st.kind = ""; $("kind").value = st.kind; }
-    document.querySelectorAll(".seg[data-g]").forEach(function (g) {
-      g.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", b.dataset.v === st[g.dataset.g]); });
-    });
-    if ($("f-only")) $("f-only").checked = st.only;
-    try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {}
+      $("count").textContent = shown === rows.length ? rows.length + " coins" : shown + " of " + rows.length + " coins";
+      $("none").hidden = shown > 0;
+      mark(ms);
+      try { localStorage.setItem(KEY, JSON.stringify(ms)); } catch (e) {}
+    };
+    pills("f", ms, applyMk); pills("o", ms, applyMk);
+    document.addEventListener("rv-find", applyMk);
+    applyMk();
   }
-  function sort() {
-    var num = function (r, k) { return Number(r.dataset[k]); };
-    var cmp = {
-      rank: function (a, b) { return num(a, "rank") - num(b, "rank"); },
-      n: function (a, b) { return num(b, "n") - num(a, "n") || num(a, "rank") - num(b, "rank"); },
-      "chg-desc": function (a, b) { return num(b, "chg") - num(a, "chg"); },
-      "chg-asc": function (a, b) { return num(a, "chg") - num(b, "chg"); },
-      sym: function (a, b) { return a.dataset.sym < b.dataset.sym ? -1 : 1; }
-    }[st.sort] || function () { return 0; };
-    rows.sort(cmp).forEach(function (r) { body.appendChild(r); });
+
+  // ---------------------------------------------------------------- Signals feed: direction and chart filters
+  var feed = $("feed");
+  if (feed) {
+    var fs = {dir: "", tf: ""};
+    var applyFeed = function () {
+      var shown = 0, groupHead = null, groupHas = false;
+      Array.prototype.forEach.call(feed.children, function (el) {
+        if (el.hasAttribute("data-grp")) { if (groupHead) groupHead.hidden = !groupHas; groupHead = el; groupHas = false; return; }
+        var vis = (!fs.dir || el.dataset.dir === fs.dir) && (!fs.tf || el.dataset.tf === fs.tf);
+        el.hidden = !vis; if (vis) { shown++; groupHas = true; }
+      });
+      if (groupHead) groupHead.hidden = !groupHas;
+      $("none").hidden = shown > 0 || !feed.querySelector(".fr");
+      mark(fs);
+    };
+    pills("dir", fs, applyFeed); pills("tf", fs, applyFeed);
+    applyFeed();
   }
-  if ($("kind")) $("kind").addEventListener("change", function () { st.kind = $("kind").value; apply(); });
-  document.querySelectorAll(".seg[data-g] button").forEach(function (b) {
-    b.addEventListener("click", function () { st[b.parentNode.dataset.g] = b.dataset.v; apply(); });
-  });
-  if ($("f-only")) $("f-only").addEventListener("change", function () { st.only = $("f-only").checked; apply(); });
-  $("q").addEventListener("input", apply);
-  if ($("sort").querySelector('option[value="' + st.sort + '"]')) $("sort").value = st.sort;
-  $("sort").addEventListener("change", function () { st.sort = $("sort").value; sort(); apply(); });
-  sort(); apply();
 })();

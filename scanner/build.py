@@ -15,7 +15,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from . import site, sources, universe
+from . import names, site, sources, universe
 from .signals import KINDS, is_new, scan
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -65,6 +65,10 @@ def analyse(src: sources.Source, pair: dict, tfs: list[str], keep: int, hist_lim
     history.sort(key=lambda s: -s["t"])
     coin = {"base": pair["base"], "symbol": pair["symbol"], "price": pair["last"], "change": pair["change_pct"],
             "qv": pair["quote_volume"], "rsi": rsi_now, "new": new, "history": history[:hist_limit]}
+    h1 = bars_by_tf.get("1h") or []
+    if len(h1) >= 24:                                     # the 7-day line in the markets table: hourly closes, every 4th
+        week = [b.c for b in h1[-168:]]
+        coin["spark"] = [float(f"{x:.6g}") for x in week[::4] + ([week[-1]] if (len(week) - 1) % 4 else [])]
     return coin, bars_by_tf, sigs_by_tf
 
 
@@ -115,6 +119,7 @@ def run(out: Path, log=print) -> dict:
         coin["rank"] = rank
         coins.append(coin)
         charts[coin["base"]] = {tf: chart_data(b, sigs_by_tf[tf]) for tf, b in bars_by_tf.items()}
+    names.attach(coins, log)
     data = {"generated": int(time.time() * 1000), "source": src.name, "every_min": cfg.get("every_min", 15),
             "source_label": SOURCE_LABEL.get(src.name, src.name), "timeframes": tfs, "coins": coins}
     write(out, cfg, refs, data, charts)
@@ -134,7 +139,8 @@ def write(out: Path, cfg: dict, refs: list[dict], data: dict, charts: dict) -> N
         p.write_text(text, encoding="utf-8")
 
     put("index.html", site.home(ctx))
-    put("signals/index.html", site.signal_index(ctx))
+    put("signals/index.html", site.signals_feed(ctx))
+    put("learn/index.html", site.learn(ctx))
     for slug in KINDS:
         put(f"signals/{slug}/index.html", site.signal_page(ctx, slug))
     for c in data["coins"]:
@@ -147,8 +153,6 @@ def write(out: Path, cfg: dict, refs: list[dict], data: dict, charts: dict) -> N
     for f in ("style.css", "app.js", "mark.svg"):
         shutil.copy(ROOT / "static" / f, out / "assets" / f)
     shutil.copytree(ROOT / "static" / "fonts", out / "assets" / "fonts")
-    if (ROOT / "static" / "lab").exists():                     # design concepts, not linked, noindex
-        shutil.copytree(ROOT / "static" / "lab", out / "lab")
     shutil.copy(ROOT / "static" / "CNAME", out / "CNAME")          # the custom domain (rivemont.xyz)
 
 

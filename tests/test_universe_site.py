@@ -70,7 +70,7 @@ class Pages(unittest.TestCase):
 
     def test_every_page_and_file(self):
         d = self.write([])
-        for rel in ("index.html", "signals/index.html", "signals/rsi-oversold/index.html", "coin/abc/index.html",
+        for rel in ("index.html", "signals/index.html", "learn/index.html", "signals/rsi-oversold/index.html", "coin/abc/index.html",
                     "coin/xyz/index.html", "404.html", "sitemap.xml", "robots.txt", "data/scan.json",
                     "assets/style.css", "assets/app.js", ".nojekyll"):
             self.assertTrue((d / rel).exists(), rel)
@@ -87,8 +87,11 @@ class Pages(unittest.TestCase):
         self.assertIn("Not financial advice", home)
         self.assertIn('data-price="ABCUSDT">$9.50<', home)                     # dollars, and live-updatable
         self.assertIn("Signals updated", home)
-        self.assertIn('<button type="button" class="chip bull"', home)          # tap or hover shows the candle time
-        self.assertIn('data-when="4h candle of', home)
+        self.assertIn('data-when="4h candle of', home)                          # the newest signal and its candle
+        self.assertIn("RSI oversold", home)
+        feed = (d / "signals/index.html").read_text()
+        self.assertIn('data-dir="bull" data-tf="4h"', feed)                    # the feed lists the new signal
+        self.assertIn("RSI oversold", (d / "learn/index.html").read_text())
         self.assertIn("Free during beta", home)
         self.assertIn('property="og:title"', home)
         sm = (d / "sitemap.xml").read_text()
