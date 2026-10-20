@@ -12,7 +12,19 @@ from urllib.parse import quote
 
 from .signals import KINDS, bar_time, fmt
 
-ASSET_V = "3"                     # bump to refresh cached CSS/JS
+def _asset_version() -> str:
+    """Short hash of the static CSS/JS, so browsers fetch them again whenever they change."""
+    import hashlib
+    from pathlib import Path
+    h = hashlib.sha1()
+    for name in ("style.css", "app.js"):
+        f = Path(__file__).resolve().parent.parent / "static" / name
+        if f.exists():
+            h.update(f.read_bytes())
+    return h.hexdigest()[:8]
+
+
+ASSET_V = _asset_version()
 CHART_LIB = "https://cdn.jsdelivr.net/npm/lightweight-charts@4.2.3/dist/lightweight-charts.standalone.production.js"
 ICON = "https://assets.coincap.io/assets/icons/{}@2x.png"
 LOGO = ('<svg class="mark" viewBox="0 0 20 26" aria-hidden="true"><rect x="0" y="0" width="7" height="20" fill="currentColor"/>'
