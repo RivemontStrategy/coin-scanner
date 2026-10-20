@@ -143,7 +143,7 @@
       var last = d.c.length ? d.c[d.c.length - 1][4] : 1, p = Math.max(0, Math.min(8, 4 - Math.floor(Math.log10(Math.abs(last) || 1))));
       chart = LightweightCharts.createChart(box, {
         autoSize: true,
-        layout: {background: {type: "solid", color: css("--surface")}, textColor: css("--faint"), fontFamily: "Geist Mono, ui-monospace, monospace", fontSize: 11},
+        layout: {background: {type: "solid", color: css("--bg")}, textColor: css("--faint"), fontFamily: "Geist Mono, ui-monospace, monospace", fontSize: 11},
         grid: {vertLines: {visible: false}, horzLines: {color: css("--line-2")}},
         rightPriceScale: {borderVisible: false, scaleMargins: {top: 0.12, bottom: 0.08}},
         timeScale: {borderVisible: false, timeVisible: tf !== "1d", secondsVisible: false},

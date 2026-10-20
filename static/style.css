@@ -1,5 +1,6 @@
-/* Rivemont design tokens ("Bots you can read", 2026-10-12): light by default, dark one tap away. One accent, used
-   sparingly; green and red only on numbers; hairlines instead of boxes. */
+/* Rivemont design tokens (2026-10-20, monotone): calm near-black by default, a white light theme one tap away. No accent
+   colour: black, greys and white; muted green and red only on numbers that go up or down; coin logos toned down;
+   hairlines instead of boxes; roomy rows. */
 @font-face { font-family: "Geist"; src: url(fonts/geist-var-latin.woff2) format("woff2"); font-weight: 100 900; font-display: swap;
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2190-2199, U+2212, U+2215, U+25B2, U+25BC; }
 @font-face { font-family: "Geist"; src: url(fonts/geist-var-latin-ext.woff2) format("woff2"); font-weight: 100 900; font-display: swap;
@@ -7,18 +8,18 @@
 @font-face { font-family: "Geist Mono"; src: url(fonts/geistmono-var-latin.woff2) format("woff2"); font-weight: 100 900; font-display: swap; }
 @font-face { font-family: "Manrope"; src: url(fonts/manrope-700-latin.woff2) format("woff2"); font-weight: 700; font-display: swap; }
 
-:root, [data-theme="light"] {
-  --bg: #FAFAF8; --surface: #FFFFFF; --surface-2: #F2F1EE; --line: #E6E5E1; --line-2: #EEEDE9;
-  --text: #111112; --muted: #5C5D61; --faint: #6B6C71; --accent: #FF4F1A;
-  --up: #087A4B; --dn: #C53434; --shadow: 0 24px 48px -36px rgba(17,17,18,.28);
+:root, [data-theme="dark"] {
+  --bg: #101010; --surface: #161616; --surface-2: #1f1e1e; --line: rgba(255,255,255,.09); --line-2: rgba(255,255,255,.055);
+  --text: #FFFFFF; --muted: #BCBBBB; --faint: #8F8E8E; --accent: #FFFFFF; --invert: #101010;
+  --up: #7FA98F; --dn: #C4777A; --shadow: none;
   --font: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  --edge: 32px; color-scheme: light;
+  --edge: 32px; color-scheme: dark;
 }
-[data-theme="dark"] {
-  --bg: #0D0D0E; --surface: #151517; --surface-2: #1F1F22; --line: #2A2A2E; --line-2: #212124;
-  --text: #F3F2EE; --muted: #A6A6AB; --faint: #8A8A90; --accent: #FF6A3D;
-  --up: #38D38A; --dn: #FF6B6B; --shadow: none; color-scheme: dark;
+[data-theme="light"] {
+  --bg: #FFFFFF; --surface: #FFFFFF; --surface-2: #F3F3F3; --line: rgba(0,0,0,.09); --line-2: rgba(0,0,0,.055);
+  --text: #121212; --muted: #555555; --faint: #7A7A7A; --accent: #121212; --invert: #FFFFFF;
+  --up: #4A7A5C; --dn: #A2504F; --shadow: none; color-scheme: light;
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
@@ -49,49 +50,49 @@ h2 { font-size: 20px; font-weight: 600; letter-spacing: -0.025em; margin: 48px 0
 .theme:hover { background: var(--surface-2); }
 
 /* ---------------------------------------------------------------- hero */
-.hero { padding: 56px 0 24px; }
+.hero { padding: 72px 0 32px; }
 .hero.slim { padding: 48px 0 16px; }
 .eyebrow { margin: 0 0 18px; font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
-.eyebrow::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.eyebrow::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--faint); }
 .eyebrow a:hover { text-decoration: underline; }
-.hero h1 { margin: 0; font-weight: 600; font-size: clamp(36px, 5.6vw, 68px); line-height: 1.02; letter-spacing: -0.05em; max-width: 16ch; }
-.hero.slim h1 { font-size: clamp(32px, 4.4vw, 52px); max-width: 22ch; }
+.hero h1 { margin: 0; font-weight: 500; font-size: clamp(34px, 4.6vw, 56px); line-height: 1.06; letter-spacing: -0.04em; max-width: 18ch; }
+.hero.slim h1 { font-size: clamp(30px, 3.8vw, 46px); max-width: 22ch; }
 /* display figures in Geist with even digits: Mono's wide comma looks gappy at this size */
 .hero h1 .num, .quote .big { font-family: var(--font); font-variant-numeric: tabular-nums; letter-spacing: -0.05em; }
 .soft { color: var(--faint); }
-.sub { margin: 18px 0 0; font-size: 17px; line-height: 1.5; color: var(--muted); max-width: 62ch; }
+.sub { margin: 20px 0 0; font-size: 16px; line-height: 1.6; color: var(--faint); max-width: 62ch; }
 .status { margin: 20px 0 0; display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--faint); }
 .live { display: inline-flex; align-items: center; gap: 7px; }
 .live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--line); }
-.live.on::before { background: var(--up); box-shadow: 0 0 0 3px color-mix(in srgb, var(--up) 18%, transparent); }
+.live.on::before { background: var(--up); }
 
 /* ---------------------------------------------------------------- pills and segmented controls */
 .pill, .kinds .pill { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px; border-radius: 999px;
   border: 1px solid var(--line); background: transparent; color: var(--text); font: 500 13px/1 var(--font); cursor: pointer; white-space: nowrap; }
-.pill:hover { background: var(--surface-2); }
+.pill:hover { border-color: var(--faint); }
 .pill b { font-family: var(--mono); font-weight: 500; color: var(--faint); }
-.pill[aria-pressed="true"] { background: var(--surface-2); border-color: var(--text); }
-.pill[aria-pressed="true"] b { color: var(--text); }
+.pill[aria-pressed="true"] { background: var(--text); border-color: var(--text); color: var(--invert); }
+.pill[aria-pressed="true"] b { color: var(--invert); opacity: .6; }
 .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--faint); flex: none; }
 .dot.bull { background: var(--up); }
 .dot.bear { background: var(--dn); }
 .hero h1 .dot { width: 0.3em; height: 0.3em; margin: 0 0.3em 0 0.04em; vertical-align: 0.22em; }
-.kinds { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 0 20px; }
+.kinds { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 0 28px; }
 .kinds .pill[data-zero] { color: var(--faint); }
 
-.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 14px 0; border-top: 1px solid var(--line-2); }
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 18px 0 14px; border-top: 1px solid var(--line-2); }
 .grow { flex: 1; }
-.seg { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--surface-2); }
+.seg { display: inline-flex; padding: 3px; border-radius: 999px; border: 1px solid var(--line); }
 .seg button { height: 28px; padding: 0 13px; border: 0; border-radius: 999px; background: transparent; color: var(--muted);
   font: 500 13px/1 var(--font); cursor: pointer; }
 .seg button:hover { color: var(--text); }
-.seg button.on { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(17,17,18,.08), 0 0 0 1px var(--line); }
-[data-theme="dark"] .seg button.on { background: var(--line); box-shadow: none; }
+.seg button.on { background: var(--surface-2); color: var(--text); }
 .tog { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); cursor: pointer; }
 .tog input { accent-color: var(--text); width: 15px; height: 15px; margin: 0; }
-#q, #sort { height: 34px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--text);
+#q, #sort { height: 34px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--text);
   font: 13px var(--font); padding: 0 14px; }
 #q { width: 180px; }
+#sort option { background: var(--bg); color: var(--text); }
 #sort { padding-right: 28px; appearance: none; -webkit-appearance: none; cursor: pointer;
   background-image: linear-gradient(45deg, transparent 50%, var(--faint) 50%), linear-gradient(135deg, var(--faint) 50%, transparent 50%);
   background-position: calc(100% - 15px) 15px, calc(100% - 11px) 15px; background-size: 4px 4px; background-repeat: no-repeat; }
@@ -99,14 +100,14 @@ h2 { font-size: 20px; font-weight: 600; letter-spacing: -0.025em; margin: 48px 0
 
 /* ---------------------------------------------------------------- the coin table */
 table.coins { width: 100%; border-collapse: collapse; }
-.coins th { text-align: left; font: 500 11.5px/1 var(--font); color: var(--faint); letter-spacing: 0.06em; text-transform: uppercase;
-  padding: 12px 12px; border-bottom: 1px solid var(--line); }
-.coins td { padding: 0 12px; height: 56px; border-bottom: 1px solid var(--line-2); vertical-align: middle; }
-.coins tbody tr:hover td { background: color-mix(in srgb, var(--surface-2) 55%, transparent); }
+.coins th { text-align: left; font: 400 12px/1 var(--font); color: var(--faint); letter-spacing: 0.02em;
+  padding: 14px 12px; border-bottom: 1px solid var(--line); }
+.coins td { padding: 0 12px; height: 68px; border-bottom: 1px solid var(--line-2); vertical-align: middle; }
+.coins tbody tr:hover td { background: var(--surface); }
 .coins th:first-child, .coins td:first-child { padding-left: 4px; }
 .coins .num { text-align: right; white-space: nowrap; }
 .coins .rk { width: 44px; color: var(--faint); font-size: 12.5px; text-align: left; }
-.coins td.coin a { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: -0.01em; }
+.coins td.coin a { display: inline-flex; align-items: center; gap: 12px; font-weight: 500; letter-spacing: -0.01em; }
 .coins td.px { font-size: 14px; width: 1%; }
 .coins td.ch { font-size: 14px; width: 1%; padding-right: 28px; }
 .coins td.sigs { padding-top: 10px; padding-bottom: 10px; line-height: 1; }
@@ -117,40 +118,39 @@ table.coins { width: 100%; border-collapse: collapse; }
 .empty { padding: 28px 0; color: var(--faint); text-align: center; }
 
 /* coin icons, with a letter badge underneath when the icon does not load */
-.ci { position: relative; display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; flex: none;
+.ci { position: relative; display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; flex: none;
   background: var(--surface-2); overflow: hidden; }
 .ci::before { content: attr(data-l); font: 600 11px var(--font); color: var(--muted); }
-.ci img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ci img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: saturate(.4); }
 .ci.lg { width: 44px; height: 44px; }
 .ci.lg::before { font-size: 18px; }
 
 /* signal chips: a dot in the signal's direction, the timeframe, a few words */
 .chip { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px 0 9px; margin: 3px 6px 3px 0;
-  border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--text);
-  font: 500 12.5px/1 var(--font); white-space: nowrap; cursor: pointer; vertical-align: middle; }
+  border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--muted);
+  font: 400 12.5px/1 var(--font); white-space: nowrap; cursor: pointer; vertical-align: middle; }
 .chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--faint); }
 .chip.bull::before { background: var(--up); }
 .chip.bear::before { background: var(--dn); }
 .chip i { font: 500 11.5px var(--mono); font-style: normal; color: var(--faint); }
-.chip:hover { border-color: var(--faint); }
+.chip:hover { border-color: var(--faint); color: var(--text); }
 .chip.dim { opacity: .28; }
-[data-theme="dark"] .chip { background: var(--surface-2); border-color: transparent; }
-[data-theme="dark"] .chip:hover { border-color: var(--line); }
 
-.tip { position: absolute; z-index: 30; width: max-content; max-width: 280px; padding: 12px 14px; border-radius: 14px; background: var(--surface);
-  border: 1px solid var(--line); box-shadow: 0 18px 40px -18px rgba(17,17,18,.35); font-size: 13px; display: grid; gap: 3px; }
+
+.tip { position: absolute; z-index: 30; width: max-content; max-width: 280px; padding: 12px 14px; border-radius: 14px; background: var(--surface-2);
+  border: 1px solid var(--line); box-shadow: 0 18px 40px -18px rgba(0,0,0,.5); font-size: 13px; display: grid; gap: 3px; }
 .tip[hidden] { display: none; }
 .tip b { font-weight: 600; }
 .tip span { color: var(--muted); }
 .tip a { margin-top: 6px; font-weight: 500; }
 .tip a:hover { text-decoration: underline; }
-@keyframes flash { from { color: var(--accent); } to { color: inherit; } }
+@keyframes flash { from { opacity: .45; } to { opacity: 1; } }
 .flash { animation: flash 1.4s ease-out; }
 
 /* ---------------------------------------------------------------- signal cards */
 .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; padding: 12px 0 8px; }
-.card { display: block; padding: 22px; border-radius: 22px; background: var(--surface); border: 1px solid var(--line-2); box-shadow: var(--shadow); }
-.card:hover { border-color: var(--line); }
+.card { display: block; padding: 24px; border-radius: 16px; background: transparent; border: 1px solid var(--line); }
+.card:hover { border-color: var(--faint); }
 .card .ch { display: flex; align-items: center; gap: 10px; }
 .card .ch b { font-weight: 600; letter-spacing: -0.015em; }
 .card .n { margin-left: auto; color: var(--faint); }
@@ -161,9 +161,9 @@ table.coins { width: 100%; border-collapse: collapse; }
 .ct { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
 .ct h1 { display: flex; align-items: center; gap: 16px; max-width: none; }
 .quote { margin: 0; display: flex; align-items: baseline; gap: 14px; }
-.quote .big { font-size: clamp(28px, 3.6vw, 44px); font-weight: 500; letter-spacing: -0.04em; }
+.quote .big { font-size: clamp(28px, 3.6vw, 44px); font-weight: 400; letter-spacing: -0.04em; }
 .quote span:last-child { font-size: 15px; }
-.chartcard { padding: 18px 18px 14px; border-radius: 22px; background: var(--surface); border: 1px solid var(--line-2); box-shadow: var(--shadow); }
+.chartcard { padding: 18px 18px 14px; border-radius: 16px; background: transparent; border: 1px solid var(--line); }
 .chartcard .tabs { margin-bottom: 12px; }
 .chart { height: 440px; display: grid; place-items: center; }
 .chart > div { width: 100%; height: 100%; }
@@ -196,8 +196,8 @@ details.more[open] summary { display: none; }
   :root, [data-theme="light"], [data-theme="dark"] { --edge: 16px; }
   .top .wrap { height: 56px; }
   .top nav { gap: 16px; }
-  .hero { padding: 32px 0 16px; }
-  .hero h1 { font-size: 38px; letter-spacing: -0.045em; }
+  .hero { padding: 40px 0 20px; }
+  .hero h1 { font-size: 34px; letter-spacing: -0.035em; }
   .hero.slim h1 { font-size: 30px; }
   .sub { font-size: 15px; margin-top: 12px; }
   .kinds { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 calc(-1 * var(--edge)); padding: 4px var(--edge) 16px;
@@ -210,7 +210,7 @@ details.more[open] summary { display: none; }
   /* each coin: one line for the coin, price and change, its signals under it */
   .coins thead { display: none; }
   .coins tbody tr { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; column-gap: 10px;
-    padding: 12px 0; border-bottom: 1px solid var(--line-2); }
+    padding: 16px 0; border-bottom: 1px solid var(--line-2); }
   .coins td { height: auto; padding: 0; border: 0; }
   .coins td:first-child { padding-left: 0; }
   .coins .rk { width: 22px; }
@@ -221,7 +221,7 @@ details.more[open] summary { display: none; }
   .coins.list tbody tr { grid-template-columns: 1fr auto auto; }
   .coins.list td { padding: 0; }
   .coins.list td.what { grid-column: 1 / -1; padding-top: 8px; }
-  .chartcard { padding: 12px 10px 10px; border-radius: 18px; margin: 0 calc(-1 * 6px); }
+  .chartcard { padding: 12px 10px 10px; border-radius: 14px; margin: 0 calc(-1 * 6px); }
   .chart { height: 320px; }
   .ct h1 { font-size: 34px; }
   .ci.lg { width: 34px; height: 34px; }

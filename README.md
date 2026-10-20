@@ -45,9 +45,9 @@ Python 3.11+, standard library only.
 
 ## Design
 
-The Rivemont design system of 2026-10-12: light by default (the switch at the top right remembers a choice), Geist
-for text and Geist Mono for figures (self-hosted, OFL, `static/fonts`), Manrope only for the wordmark, one orange
-accent used sparingly, green and red only on numbers, hairlines and pill-shaped filters. Coin pages draw a candle
+The Rivemont design (monotone since 2026-10-20): near-black by default with a white light theme (the switch at the top right remembers a choice), Geist
+for text and Geist Mono for figures (self-hosted, OFL, `static/fonts`), Manrope only for the wordmark, no accent colour,
+muted green and red only on numbers, coin logos toned down, hairlines and pill-shaped filters. Coin pages draw a candle
 chart with lightweight-charts 4.2.3 (jsDelivr) and mark each signal on its candle; coin icons come from CoinCap's
 public icon CDN, with a letter badge when a coin has none.
 

@@ -117,7 +117,7 @@ def page(ctx: Ctx, path: str, title: str, desc: str, body: str, ld: dict | None 
     gen = ctx.scan["generated"]
     a = lambda f: f'{ctx.href("assets/" + f)}?v={ASSET_V}'                      # noqa: E731
     return f"""<!doctype html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -130,9 +130,9 @@ def page(ctx: Ctx, path: str, title: str, desc: str, body: str, ld: dict | None 
 <meta property="og:description" content="{escape(desc)}">
 <meta property="og:url" content="{escape(url)}">
 <meta name="twitter:card" content="summary">
-<meta name="theme-color" content="#FAFAF8">
+<meta name="theme-color" content="#101010">
 <link rel="icon" href="{ctx.href('assets/mark.svg')}" type="image/svg+xml">
-<script>try{{if(localStorage.getItem("rv-theme")==="dark")document.documentElement.dataset.theme="dark"}}catch(e){{}}</script>
+<script>try{{if(localStorage.getItem("rv-theme")==="light")document.documentElement.dataset.theme="light"}}catch(e){{}}</script>
 <link rel="preload" href="{a('fonts/geist-var-latin.woff2')}" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="{a('style.css')}">
 {head_extra}{ld_html}
