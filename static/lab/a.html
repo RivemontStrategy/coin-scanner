@@ -29,7 +29,10 @@ h1 { margin: 0; font-size: 30px; font-weight: 500; letter-spacing: -.03em; }
 .mini > div { display: flex; justify-content: space-between; align-items: center; }
 @media (max-width: 900px) {
   .grid { grid-template-columns: 1fr; gap: 32px; padding-top: 32px; }
-  .side { position: static; order: -1; grid-template-columns: 1fr; }
+  .side { position: static; grid-template-columns: 1fr; }
+  .side .card:not(:first-child) { display: none; }
+  .grid > section { order: 1; } .side { order: 0; }
+  h1 { font-size: 26px; }
   .row { grid-template-columns: 36px 1fr 84px; grid-template-areas: "t a p" "t s s"; row-gap: 6px; padding: 12px 0; }
   .row .t { grid-area: t; align-self: start; padding-top: 6px; } .row .asset { grid-area: a; } .row .px { grid-area: p; }
   .row .sig { grid-area: s; } .row .dir { display: none; }
