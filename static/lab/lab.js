@@ -42,7 +42,7 @@ window.LAB = (function () {
       s.coins.forEach(function (c) {
         var m = by[c.base.toUpperCase()];
         c.name = m ? m.name.replace(/\s*\(.*\)\s*/g, "") : c.base; c.img = m ? m.image : null;
-        c.spark = m && m.sparkline_in_7d ? m.sparkline_in_7d.price.filter(function (_, i) { return i % 4 === 0; }) : null;
+        c.spark = m && m.sparkline_in_7d ? m.sparkline_in_7d.price.filter(function (_, i) { return i % 6 === 0; }) : null;
       });
       return s;
     });
