@@ -1,0 +1,19 @@
+# One-off check: which exchange data APIs answer from GitHub's runners (US).
+name: probe data sources
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [scripts/probe.py, scanner/sources.py, .github/workflows/probe.yml]
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python scripts/probe.py

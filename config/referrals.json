@@ -1,0 +1,8 @@
+{
+  "_note": "Exchange buttons. A button shows only when its url is filled in. Use the exchange's own referral link.",
+  "exchanges": [
+    {"id": "bybit", "name": "Bybit", "url": ""},
+    {"id": "bingx", "name": "BingX", "url": ""},
+    {"id": "bitget", "name": "Bitget", "url": ""}
+  ]
+}
