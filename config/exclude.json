@@ -1,0 +1,12 @@
+{
+  "_note": "Not coins, or duplicates of a coin already listed. Matched against the base asset (BTC in BTCUSDT). Add to any list; the scanner fills the top 150 with the next real coins.",
+  "stablecoins": ["USDC", "USDT", "FDUSD", "TUSD", "BUSD", "DAI", "USDP", "USDD", "PYUSD", "USDE", "USDS", "USD1", "U",
+    "USDJ", "USDK", "USDN", "USDX", "USDQ", "USDR", "RLUSD", "BFUSD", "FRAX", "LUSD", "GUSD", "SUSD", "XUSD", "CUSD",
+    "EURI", "EURC", "EURT", "AEUR", "EUR", "GBP", "AUD", "BRL", "TRY", "JPY", "UAH", "ZAR", "IDRT", "BIDR", "BVND", "VAI"],
+  "tokenized_stocks": ["SNDKB", "SPCXB", "SOXLB", "MUB", "CRCLB", "MSTRB", "TSLAB", "SKHYB", "INTCB", "NVDAB", "TQQQB",
+    "KORUB", "QQQB", "SNXXB", "NBISB", "SOXSB", "AMDB", "LITEB", "GOOGLB", "BNCB", "AAOIB", "DRAMB", "TSMB", "CBRSB",
+    "AMZNB", "MRVLB", "AVGOB", "ORCLB", "PLTRB", "METAB", "AXTIB", "CRWVB", "SPYB", "COINB", "AAPLB", "MSFTB", "NFLXB",
+    "HOODB", "GOOGB", "IWMB", "GLDB", "SLVB", "BABAB", "UBERB", "ARMB", "SMCIB", "MUUB", "TSMCB"],
+  "commodities": ["XAUT", "PAXG", "XAUM", "KAU", "KAG"],
+  "wrapped_duplicates": ["WBTC", "WETH", "BETH", "WBETH", "BTCB", "CBBTC", "STETH", "WSTETH", "BNSOL", "WBNB", "RENBTC"]
+}

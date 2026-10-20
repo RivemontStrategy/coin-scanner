@@ -60,11 +60,22 @@ def analyse(src: sources.Source, pair: dict, tfs: list[str], keep: int, hist_lim
     if not bars_by_tf:
         return None
     order = {tf: i for i, tf in enumerate(tfs)}
+    new = latest_per_kind(new)
     new.sort(key=lambda s: (order[s["tf"]], -s["t"]))
     history.sort(key=lambda s: -s["t"])
     coin = {"base": pair["base"], "symbol": pair["symbol"], "price": pair["last"], "change": pair["change_pct"],
             "qv": pair["quote_volume"], "rsi": rsi_now, "new": new, "history": history[:hist_limit]}
     return coin, bars_by_tf, sigs_by_tf
+
+
+def latest_per_kind(sigs: list[dict]) -> list[dict]:
+    """One signal per timeframe and kind: the most recent (a double top confirmed twice in 3 candles shows once)."""
+    best: dict[tuple, dict] = {}
+    for s in sigs:
+        k = (s["tf"], s["kind"])
+        if k not in best or s["t"] > best[k]["t"]:
+            best[k] = s
+    return list(best.values())
 
 
 def run(out: Path, log=print) -> dict:
@@ -73,6 +84,9 @@ def run(out: Path, log=print) -> dict:
     src, tickers = sources.pick(log)
     pairs = universe.top_pairs(tickers, cfg.get("top_n", universe.TOP_N))
     log(f"coins: {len(pairs)}")
+    odd = [p["base"] for p in pairs if p["base"].upper().endswith("B") and len(p["base"]) > 3 and p["last"] > 5]
+    if odd:     # tokenized stocks end in B (TSLAB): anything new like that belongs in config/exclude.json
+        log(f"check: bases ending in B (stock tokens?): {' '.join(odd)}")
     tfs = cfg["timeframes"]
     workers = {"binance": 8, "okx": 4, "gate": 6, "mexc": 6}.get(src.name, 4)
 
@@ -94,7 +108,7 @@ def run(out: Path, log=print) -> dict:
         coins.append(coin)
         charts[coin["base"]] = {tf: chart.svg(b, sigs_by_tf[tf], label=f'{coin["base"]} {tf} candles')
                                 for tf, b in bars_by_tf.items()}
-    data = {"generated": int(time.time() * 1000), "source": src.name,
+    data = {"generated": int(time.time() * 1000), "source": src.name, "every_min": cfg.get("every_min", 15),
             "source_label": SOURCE_LABEL.get(src.name, src.name), "timeframes": tfs, "coins": coins}
     write(out, cfg, refs, data, charts)
     log(f"done: {len(coins)} coins, {sum(len(c['new']) for c in coins)} new signals, {time.time() - t0:.0f}s")

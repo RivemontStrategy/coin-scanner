@@ -1,9 +1,9 @@
-# Every 30 minutes: fetch prices, compute the signals, build the static site, publish it on GitHub Pages.
+# Every 15 minutes: fetch prices, compute the signals, build the static site, publish it on GitHub Pages.
 # Public repository: GitHub-hosted runner minutes are free. If a run fails, the last published site stays up.
 name: scan and publish
 on:
   schedule:
-    - cron: "7,37 * * * *"        # twice an hour, off the busy top of the hour
+    - cron: "2,17,32,47 * * * *"   # every 15 minutes, off the busy top of the hour (config/site.json cron_minutes)
   workflow_dispatch:
   push:
     branches: [main]

@@ -42,7 +42,7 @@ h2 { font-size: 18px; margin: 28px 0 10px; }
 table { width: 100%; border-collapse: collapse; }
 th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
 th { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
-tbody tr:last-child td { border-bottom: 0; }
+tbody tr:last-child td, tbody tr:last-child th, table.now tr:last-child th, table.now tr:last-child td { border-bottom: 0; }
 .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 td.coin { white-space: nowrap; }
 td.coin a { color: var(--text); }
@@ -120,3 +120,22 @@ table.now th { width: 48px; text-transform: none; font-size: 14px; color: var(--
   table.coins td.sigs, table.coins td.wide { grid-column: 1 / -1; padding-top: 6px; line-height: 1.9; }
   table.coins td.sigs:has(> .muted:only-child) { display: none; }
 }
+
+/* chips as buttons (home): same look, plus the details popover */
+button.chip { font: inherit; font-size: 12px; cursor: pointer; }
+button.chip:hover, button.chip:focus-visible { border-color: var(--line); outline: none; }
+.tip { position: absolute; z-index: 20; max-width: 280px; padding: 10px 12px; border-radius: 10px; background: var(--panel);
+  border: 1px solid var(--line); box-shadow: 0 8px 24px rgba(0,0,0,.25); font-size: 13px; display: grid; gap: 2px; }
+.tip[hidden] { display: none; }
+.tip span { color: var(--muted); }
+.tip a { margin-top: 4px; }
+
+/* live prices and the scan's timing */
+.status { display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--muted); margin: 6px 0 0; }
+.live::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px;
+  background: var(--muted); vertical-align: 1px; }
+.live.on::before { background: var(--up); }
+@keyframes flash { from { background: var(--chipbg); } to { background: transparent; } }
+.flash { animation: flash 1.2s ease-out; }
+details.more { margin-top: 4px; }
+details.more summary { cursor: pointer; color: var(--accent); padding: 10px 0; }

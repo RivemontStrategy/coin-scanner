@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 from .signals import KINDS, bar_time, fmt
 
 TF_NAME = {"1h": "1-hour", "4h": "4-hour", "1d": "daily"}
-ASSET_V = "1"          # bump to refresh cached CSS/JS
+ASSET_V = "2"          # bump to refresh cached CSS/JS
 
 
 class Ctx:
@@ -46,13 +46,32 @@ def _pct(x: float) -> str:
     return f"{sign}{abs(x):.2f}%"
 
 
-def chip(sig: dict, with_tf: bool = True, link: str | None = None) -> str:
+def usd(x: float) -> str:
+    return "$" + fmt(x)
+
+
+def chip(sig: dict, with_tf: bool = True, link: str | None = None, tip: bool = False) -> str:
+    """A signal chip. With tip=True it is a button: hover or tap shows its candle time and a link (static/app.js)."""
     k = KINDS[sig["kind"]]
     tf = f'<b>{escape(sig["tf"])}</b> ' if with_tf else ""
-    title = f'{k.title} · {sig["tf"]} · {bar_time(sig["t"])}'
+    when = f'{sig["tf"]} candle of {bar_time(sig["t"])}'
     inner = f'{tf}{escape(k.short)}'
-    attrs = f'class="chip {k.direction}" data-kind="{k.slug}" data-tf="{sig["tf"]}" data-dir="{k.direction}" title="{escape(title)}"'
-    return f'<a {attrs} href="{escape(link)}">{inner}</a>' if link else f'<span {attrs}>{inner}</span>'
+    attrs = f'class="chip {k.direction}" data-kind="{k.slug}" data-tf="{sig["tf"]}" data-dir="{k.direction}"'
+    if tip:
+        return (f'<button type="button" {attrs} data-title="{escape(k.title)}" data-when="{escape(when)}" data-t="{sig["t"]}"'
+                f'{f" data-href={chr(34)}{escape(link)}{chr(34)}" if link else ""}>{inner}</button>')
+    title = f'{k.title} · {when}'
+    return (f'<a {attrs} title="{escape(title)}" href="{escape(link)}">{inner}</a>' if link
+            else f'<span {attrs} title="{escape(title)}">{inner}</span>')
+
+
+def status_line(ctx: Ctx) -> str:
+    """Live prices (static/app.js fills it) and when the signals were computed and will be next."""
+    gen = ctx.scan["generated"]
+    hhmm = datetime.fromtimestamp(gen / 1000, tz=timezone.utc).strftime("%H:%M")
+    return (f'<p class="status small"><span class="live" data-live>Prices: loading…</span>'
+            f'<span>Signals updated {hhmm} UTC (<time class="ago" data-ts="{gen}">{escape(bar_time(gen))}</time>)'
+            f' · next in <span data-next>~{ctx.scan.get("every_min", 15)}</span> min</span></p>')
 
 
 def refs_html(ctx: Ctx, coin: str | None = None) -> str:
@@ -89,7 +108,7 @@ def page(ctx: Ctx, path: str, title: str, desc: str, body: str, ld: dict | None 
 <link rel="stylesheet" href="{ctx.href('assets/style.css')}?v={ASSET_V}">
 {ld_html}
 </head>
-<body>
+<body data-cron="{",".join(str(m) for m in ctx.cfg.get("cron_minutes", [2, 17, 32, 47]))}" data-gen="{gen}">
 <header class="top"><div class="wrap">
 <a class="logo" href="{ctx.href()}">{escape(ctx.name)}</a>
 <nav><a href="{ctx.href('signals/')}">Signals</a><span class="beta">Free during beta</span>
@@ -116,15 +135,16 @@ def home(ctx: Ctx) -> str:
     kinds_opts = "".join(f'<option value="{k.slug}">{escape(k.title)}</option>' for k in KINDS.values())
     rows = []
     for c in coins:
-        chips = "".join(chip(s, link=ctx.href(coin_path(c["base"]))) for s in c["new"])
+        chips = "".join(chip(s, link=ctx.href(coin_path(c["base"])), tip=True) for s in c["new"])
         cls = "up" if c["change"] > 0 else "dn" if c["change"] < 0 else ""
+        live = escape(c["base"].upper() + "USDT")
         rows.append(
-            f'<tr data-sym="{escape(c["base"])}" data-vol="{c["qv"]:.0f}" data-chg="{c["change"]:.4f}" '
+            f'<tr data-sym="{escape(c["base"].upper())}" data-vol="{c["qv"]:.0f}" data-chg="{c["change"]:.4f}" '
             f'data-n="{len(c["new"])}" data-rank="{c["rank"]}">'
             f'<td class="coin"><a href="{ctx.href(coin_path(c["base"]))}"><b>{escape(c["base"])}</b></a>'
             f'<span class="muted small">#{c["rank"]}</span></td>'
-            f'<td class="num">{escape(fmt(c["price"]))}</td>'
-            f'<td class="num {cls}">{_pct(c["change"])}</td>'
+            f'<td class="num" data-price="{live}">{escape(usd(c["price"]))}</td>'
+            f'<td class="num {cls}" data-chg-of="{live}">{_pct(c["change"])}</td>'
             f'<td class="sigs">{chips or "<span class=muted>–</span>"}</td></tr>')
     n_new = sum(len(c["new"]) for c in coins)
     n_coins = sum(1 for c in coins if c["new"])
@@ -133,7 +153,8 @@ def home(ctx: Ctx) -> str:
 <h1>Crypto signal scanner</h1>
 <p class="lead">{escape(ctx.cfg["tagline"])}</p>
 <p class="muted">{n_new} new signals on {n_coins} of the top {len(coins)} coins, from the last 3 closed candles on the
-1-hour, 4-hour and daily charts. Updated {_ago_time(ctx.scan["generated"])}.</p>
+1-hour, 4-hour and daily charts. Tap a signal for its candle time.</p>
+{status_line(ctx)}
 </section>
 {refs_html(ctx)}
 <section class="filters" aria-label="Filters">
@@ -177,8 +198,8 @@ def signal_page(ctx: Ctx, slug: str) -> str:
             if s["kind"] != slug:
                 continue
             rows.append(f'<tr><td class="coin"><a href="{ctx.href(coin_path(c["base"]))}"><b>{escape(c["base"])}</b></a></td>'
-                        f'<td>{escape(s["tf"])}</td><td class="num">{escape(fmt(c["price"]))}</td>'
-                        f'<td class="small">{escape(s["text"])}<br><span class="muted">{escape(bar_time(s["t"]))}</span></td></tr>')
+                        f'<td>{escape(s["tf"])}</td><td class="num" data-price="{escape(c["base"].upper())}USDT">{escape(usd(c["price"]))}</td>'
+                        f'<td class="small">{escape(s["text"])}<br><span class="muted">{escape(s["tf"])} candle of {escape(bar_time(s["t"]))}</span></td></tr>')
     table = (f'<div class="tablewrap"><table class="coins"><thead><tr><th>Coin</th><th>Chart</th><th class="num">Price</th>'
              f'<th>What happened</th></tr></thead><tbody>{"".join(rows)}</tbody></table></div>' if rows else
              f'<p class="empty">No coin in the top {len(ctx.scan["coins"])} shows a new {escape(k.title.lower())} right now. '
@@ -207,19 +228,25 @@ def coin_page(ctx: Ctx, c: dict, charts: dict[str, str]) -> str:
         rsi = c["rsi"].get(tf)
         chips = "".join(chip(s, with_tf=False, link=ctx.href(signal_path(s["kind"]))) for s in sigs) or '<span class="muted">No new signal</span>'
         now_rows.append(f'<tr><th>{tf}</th><td>{chips}</td><td class="num muted">RSI {"–" if rsi is None else f"{rsi:.0f}"}</td></tr>')
-    hist = "".join(f'<li><div class="when"><a class="chip {KINDS[s["kind"]].direction}" href="{ctx.href(signal_path(s["kind"]))}">'
-                   f'{escape(s["tf"])} · {escape(KINDS[s["kind"]].title)}</a><span class="muted small">{escape(bar_time(s["t"]))}</span></div>'
-                   f'<span>{escape(s["text"])}</span></li>'
-                   for s in c["history"]) or '<li class="muted">No signals in the period shown.</li>'
+    def item(s):
+        k = KINDS[s["kind"]]
+        return (f'<li><div class="when"><a class="chip {k.direction}" href="{ctx.href(signal_path(s["kind"]))}">'
+                f'{escape(s["tf"])} · {escape(k.title)}</a><span class="muted small">{escape(s["tf"])} candle of '
+                f'{escape(bar_time(s["t"]))}</span></div><span>{escape(s["text"])}</span></li>')
+    first, rest = c["history"][:20], c["history"][20:]
+    hist = "".join(item(s) for s in first) or '<li class="muted">No signals in the period shown.</li>'
+    more = (f'<details class="more"><summary>Show {len(rest)} more</summary><ul class="hist">{"".join(item(s) for s in rest)}</ul>'
+            f'</details>' if rest else "")
     body = f"""
 <p class="crumbs"><a href="{ctx.href()}">All coins</a></p>
 <div class="coinhead"><h1>{escape(base)} <span class="muted">/ USDT</span></h1>
-<p class="price"><b>{escape(fmt(c["price"]))}</b> <span class="{cls}">{_pct(c["change"])} 24h</span></p></div>
+<p class="price"><b data-price="{escape(base.upper())}USDT">{escape(usd(c["price"]))}</b> <span class="{cls}" data-chg-of="{escape(base.upper())}USDT" data-suffix=" 24h">{_pct(c["change"])} 24h</span></p></div>
+{status_line(ctx)}
 <section class="chartbox">{tabs}{panes}<p class="muted small">Closed candles only. ▲ bullish and ▼ bearish signals are
 marked under and over their candle.</p></section>
 <section><h2>Signals now</h2><table class="now">{"".join(now_rows)}</table></section>
 {refs_html(ctx, base)}
-<section><h2>Recent signals</h2><ul class="hist">{hist}</ul></section>"""
+<section><h2>Recent signals</h2><ul class="hist">{hist}</ul>{more}</section>"""
     desc = (f"{base} signals now: RSI, trend changes, double tops and bottoms, volume spikes and 30-day breakouts on the "
             f"1h, 4h and daily charts. Free, updated every 30 minutes.")
     return page(ctx, coin_path(base), f"{base} signals: RSI, trend and breakouts", desc, body)

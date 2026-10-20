@@ -18,11 +18,28 @@ class Universe(unittest.TestCase):
         got = [p["base"] for p in universe.top_pairs(tk)]
         self.assertEqual(got, ["BTC", "ETH", "JUP"])
 
+    def test_config_exclusions(self):
+        tk = [t("BTC", 9e9), t("TSLAB", 8e9, 430.0), t("U", 7e9, 1.0, 0.0), t("XAUT", 6e9, 4000.0), t("WBTC", 5e9, 80000.0),
+              t("PAXG", 4e9, 4000.0), t("ETH", 3e9)]
+        self.assertEqual([p["base"] for p in universe.top_pairs(tk)], ["BTC", "ETH"])
+        ex = universe.excluded()
+        for b in ("TSLAB", "NVDAB", "QQQB", "SOXLB", "MSTRB", "SPCXB", "SNDKB", "CRCLB", "U", "WBTC", "XAUT", "PAXG"):
+            self.assertIn(b, ex)
+
     def test_top_n_by_volume(self):
         tk = [t(f"C{i}", float(i)) for i in range(1, 300)]
         got = universe.top_pairs(tk, 150)
         self.assertEqual(len(got), 150)
         self.assertEqual(got[0]["base"], "C299")
+
+
+class OnePerKind(unittest.TestCase):
+    def test_latest_signal_per_timeframe_and_kind(self):
+        a = {"tf": "4h", "kind": "double-top", "t": 1}
+        b = {"tf": "4h", "kind": "double-top", "t": 2}
+        c = {"tf": "1d", "kind": "double-top", "t": 1}
+        got = build.latest_per_kind([a, b, c])
+        self.assertEqual(sorted((x["tf"], x["t"]) for x in got), [("1d", 1), ("4h", 2)])
 
 
 class Closed(unittest.TestCase):
@@ -61,6 +78,10 @@ class Pages(unittest.TestCase):
         self.assertIn('<link rel="canonical" href="https://example.github.io/coin-scanner/">', home)
         self.assertIn('href="/coin-scanner/coin/abc/"', home)
         self.assertIn("Not financial advice", home)
+        self.assertIn('data-price="ABCUSDT">$9.50<', home)                     # dollars, and live-updatable
+        self.assertIn("Signals updated", home)
+        self.assertIn('<button type="button" class="chip bull"', home)          # tap or hover shows the candle time
+        self.assertIn('data-when="4h candle of', home)
         self.assertIn("Free during beta", home)
         self.assertIn('property="og:title"', home)
         sm = (d / "sitemap.xml").read_text()
@@ -70,6 +91,14 @@ class Pages(unittest.TestCase):
         self.assertIn("ABC", page)
         self.assertIn("No coin", (d / "signals/golden-cross/index.html").read_text())
         json.loads((d / "data/scan.json").read_text())
+        coin = (d / "coin/abc/index.html").read_text()
+        self.assertIn("4h candle of", coin)
+
+    def test_long_history_folds_after_20(self):
+        sig = self.data["coins"][0]["history"][0]
+        self.data["coins"][0]["history"] = [dict(sig, t=sig["t"] - i * 3_600_000) for i in range(30)]
+        coin = (self.write([]) / "coin/abc/index.html").read_text()
+        self.assertIn("Show 10 more", coin)
 
     def test_no_trackers_or_third_party_requests(self):
         d = self.write([])

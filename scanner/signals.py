@@ -176,13 +176,13 @@ def detect_structure(bars: list[Bar], tf: str, k: int = STRUCT_K) -> list[Signal
         if down and h0 not in used_h and c > highs[h0] + m and pc <= highs[h0] + m:
             used_h.add(h0)
             out.append(_sig("bullish-structure-break", tf, bars, i,
-                            f"After lower highs and lower lows, the {tf} candle closed at {fmt(c)}, above the last swing "
-                            f"high of {fmt(highs[h0])} ({bar_time(bars[h0].t)}).", level=highs[h0]))
+                            f"After lower highs and lower lows, this {tf} candle closed at {fmt(c)}, above the last swing "
+                            f"high of {fmt(highs[h0])} (set by the {bar_time(bars[h0].t)} candle).", level=highs[h0]))
         elif up and l0 not in used_l and c < lows[l0] - m and pc >= lows[l0] - m:
             used_l.add(l0)
             out.append(_sig("bearish-structure-break", tf, bars, i,
-                            f"After higher highs and higher lows, the {tf} candle closed at {fmt(c)}, below the last swing "
-                            f"low of {fmt(lows[l0])} ({bar_time(bars[l0].t)}).", level=lows[l0]))
+                            f"After higher highs and higher lows, this {tf} candle closed at {fmt(c)}, below the last swing "
+                            f"low of {fmt(lows[l0])} (set by the {bar_time(bars[l0].t)} candle).", level=lows[l0]))
     return out
 
 
@@ -253,11 +253,14 @@ def _double(bars, tf, highs, lows, closes, a, top: bool) -> list[Signal]:
                 kind = "double-top" if top else "double-bottom"
                 word = "highs" if top else "lows"
                 side = "below" if top else "above"
-                when = "" if known == i else f" Confirmed {k} candles after the second {word[:-1]}."
+                if known == i:
+                    when = f"The {tf} candle of {bar_time(bars[i].t)} closed at {fmt(closes[i])}, {side} the neckline at {fmt(neck)}."
+                else:
+                    when = (f"The {tf} candle of {bar_time(bars[i].t)} closed {side} the neckline at {fmt(neck)} "
+                            f"({fmt(closes[i])}); the pattern is confirmed {k} candles after the second {word[:-1]}, "
+                            f"so the signal is dated {bar_time(bars[known].t)}.")
                 out.append(_sig(kind, tf, bars, known,
-                                f"Two {word} at {fmt(v1)} ({bar_time(bars[p1].t)}) and {fmt(v2)} ({bar_time(bars[p2].t)}), "
-                                f"then the {tf} candle of {bar_time(bars[i].t)} closed at {fmt(closes[i])}, {side} the "
-                                f"neckline at {fmt(neck)}.{when}",
+                                f"Two {word} at {fmt(v1)} ({bar_time(bars[p1].t)}) and {fmt(v2)} ({bar_time(bars[p2].t)}). {when}",
                                 neckline=neck, first=bars[p1].t, second=bars[p2].t, broke=bars[i].t))
                 break
     return out

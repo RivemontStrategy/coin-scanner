@@ -3,7 +3,18 @@
   "tagline": "Free crypto signal scanner: RSI, trend changes, double tops and bottoms, volume spikes and 30-day breakouts on the top 150 coins.",
   "base_url": "https://rivemontstrategy.github.io/coin-scanner/",
   "top_n": 150,
-  "timeframes": ["1h", "4h", "1d"],
+  "timeframes": [
+    "1h",
+    "4h",
+    "1d"
+  ],
   "bars": 200,
-  "history_limit": 40
+  "history_limit": 40,
+  "every_min": 15,
+  "cron_minutes": [
+    2,
+    17,
+    32,
+    47
+  ]
 }

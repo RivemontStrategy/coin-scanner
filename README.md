@@ -1,7 +1,7 @@
 # Coin Scanner
 
-A free, static crypto signal scanner. Every 30 minutes a GitHub Actions job reads public market data for the top 150
-USDT spot pairs (by 24-hour volume, without stablecoins and leveraged tokens), computes signals on the 1-hour, 4-hour
+A free, static crypto signal scanner. Every 15 minutes a GitHub Actions job reads public market data for the top 150
+USDT spot pairs (by 24-hour volume, without the non-coins listed in `config/exclude.json` and leveraged tokens), computes signals on the 1-hour, 4-hour
 and daily candles, builds a static site and publishes it on GitHub Pages. No server, no database, no trackers, no cost.
 
 ## Signals
@@ -21,6 +21,12 @@ the candle time.
 Checks on real candles, with the numbers behind each example and how often each signal fires: `docs/detector-checks.md`
 (regenerate with `python scripts/check_signals.py`).
 
+## Live prices
+
+Prices and 24-hour changes refresh in the visitor's browser every 45 seconds straight from Binance's public data
+mirror (OKX as a fallback); both allow browser requests. Signals use closed candles only and refresh with the scan;
+the page shows when they were computed and when the next scan is due.
+
 ## Data sources
 
 Tried in order until one works from the runner: Binance's public data mirror (`data-api.binance.vision`, since
@@ -39,12 +45,14 @@ Python 3.11+, standard library only.
 
 - `config/site.json`: the site name (temporary: "Coin Scanner"), tagline, address (`base_url`), number of coins,
   timeframes. `SITE_URL` / `SITE_NAME` environment variables override them.
+- `config/exclude.json`: stablecoins, tokenized stocks and ETFs, gold tokens and wrapped duplicates kept out of the
+  list (the build log prints a `check:` line for new stock-like tickers ending in B).
 - `config/referrals.json`: exchange buttons. A button is shown only when its `url` is filled in.
 
 ## Publishing (one-time)
 
 Settings → Pages → Build and deployment → Source: **GitHub Actions**. The `scan and publish` workflow then runs on
-every push to `main`, twice an hour, and on demand (Actions → scan and publish → Run workflow).
+every push to `main`, every 15 minutes (minutes 2, 17, 32, 47), and on demand (Actions → scan and publish → Run workflow).
 
 GitHub pauses scheduled workflows in a public repository after 60 days without any repository activity; a commit
 (or re-enabling the workflow in the Actions tab) starts them again.

@@ -77,10 +77,13 @@ class BinanceVision(Source):
     min_gap = 0.05
 
     def tickers(self):
+        # the 24h list still carries delisted pairs with their last day's volume: keep the ones trading now
+        info = self._get(f"{self.base}/exchangeInfo?symbolStatus=TRADING&showPermissionSets=false")
+        live = {x["symbol"] for x in info.get("symbols", []) if x.get("quoteAsset") == "USDT" and x.get("status") == "TRADING"}
         out = []
         for t in self._get(f"{self.base}/ticker/24hr"):
             s = t.get("symbol", "")
-            if not s.endswith("USDT") or float(t.get("quoteVolume") or 0) <= 0:
+            if s not in live or float(t.get("quoteVolume") or 0) <= 0:
                 continue
             last = float(t["lastPrice"])
             out.append({"base": s[:-4], "symbol": s, "last": last,
