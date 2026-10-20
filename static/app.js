@@ -133,7 +133,7 @@
       chart = LightweightCharts.createChart(box, {
         autoSize: true,
         layout: {background: {type: "solid", color: css("--bg")}, textColor: css("--faint"), fontFamily: "Geist Mono, ui-monospace, monospace", fontSize: 11},
-        grid: {vertLines: {visible: false}, horzLines: {color: css("--line-2")}},
+        grid: {vertLines: {visible: false}, horzLines: {color: css("--line2")}},
         rightPriceScale: {borderVisible: false, scaleMargins: {top: 0.12, bottom: 0.08}},
         timeScale: {borderVisible: false, timeVisible: tf !== "1d", secondsVisible: false},
         crosshair: {mode: 0, vertLine: {color: css("--line"), labelBackgroundColor: css("--text")}, horzLine: {color: css("--line"), labelBackgroundColor: css("--text")}},
