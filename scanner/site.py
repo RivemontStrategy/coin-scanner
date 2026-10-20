@@ -205,8 +205,7 @@ def home(ctx: Ctx) -> str:
 <div class="bar" aria-label="Filters">
 <div class="seg" data-g="tf"><button type="button" class="on" data-v="">All</button><button type="button" data-v="1h">1h</button><button type="button" data-v="4h">4h</button><button type="button" data-v="1d">1d</button></div>
 <div class="seg" data-g="dir"><button type="button" class="on" data-v="">Both</button><button type="button" data-v="bull">Bullish</button><button type="button" data-v="bear">Bearish</button></div>
-<select id="kind" class="sel" aria-label="Signal type"><option value="">All signals ({n_new})</option>{kinds}</select>
-<label class="tog"><input id="f-only" type="checkbox"><span>With signals</span></label>
+<select id="kind" class="sel" aria-label="Signal type"><option value="">All coins</option><option value="*">Any new signal ({n_new})</option>{kinds}</select>
 <span class="grow"></span>
 <input id="q" type="search" placeholder="Search coin" autocomplete="off" aria-label="Search coin">
 <select id="sort" class="sel" aria-label="Sort"><option value="rank">Sort: volume</option><option value="n">Sort: most signals</option><option value="chg-desc">Sort: 24h gain</option><option value="chg-asc">Sort: 24h loss</option><option value="sym">Sort: name</option></select>

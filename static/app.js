@@ -179,12 +179,13 @@
   var KEY = "rv-filters", st = {kind: "", tf: "", dir: "", only: false, sort: "rank"};
   try { var saved = JSON.parse(localStorage.getItem(KEY) || "{}"); Object.keys(st).forEach(function (k) { if (k in saved) st[k] = saved[k]; }); } catch (e) {}
 
+  if (st.only && !$("f-only")) { st.only = false; if (!st.kind) st.kind = "*"; }
   function apply() {
-    var q = $("q").value.trim().toUpperCase(), sigFilter = !!(st.kind || st.tf || st.dir), shown = 0;
+    var q = $("q").value.trim().toUpperCase(), kind = st.kind === "*" ? "" : st.kind, sigFilter = !!(st.kind || st.tf || st.dir), shown = 0;
     rows.forEach(function (r) {
       var hit = 0;
       r.querySelectorAll(".chip").forEach(function (c) {
-        var ok = (!st.kind || c.dataset.kind === st.kind) && (!st.tf || c.dataset.tf === st.tf) && (!st.dir || c.dataset.dir === st.dir);
+        var ok = (!kind || c.dataset.kind === kind) && (!st.tf || c.dataset.tf === st.tf) && (!st.dir || c.dataset.dir === st.dir);
         c.classList.toggle("dim", sigFilter && !ok);
         if (ok) hit++;
       });
@@ -198,7 +199,7 @@
     document.querySelectorAll(".seg[data-g]").forEach(function (g) {
       g.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", b.dataset.v === st[g.dataset.g]); });
     });
-    $("f-only").checked = st.only;
+    if ($("f-only")) $("f-only").checked = st.only;
     try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {}
   }
   function sort() {
@@ -216,7 +217,7 @@
   document.querySelectorAll(".seg[data-g] button").forEach(function (b) {
     b.addEventListener("click", function () { st[b.parentNode.dataset.g] = b.dataset.v; apply(); });
   });
-  $("f-only").addEventListener("change", function () { st.only = $("f-only").checked; apply(); });
+  if ($("f-only")) $("f-only").addEventListener("change", function () { st.only = $("f-only").checked; apply(); });
   $("q").addEventListener("input", apply);
   if ($("sort").querySelector('option[value="' + st.sort + '"]')) $("sort").value = st.sort;
   $("sort").addEventListener("change", function () { st.sort = $("sort").value; sort(); apply(); });
