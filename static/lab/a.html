@@ -3,7 +3,7 @@
 <meta name="robots" content="noindex"><title>Concept A · Feed</title>
 <link rel="stylesheet" href="lab.css">
 <style>
-.grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 56px; padding: 56px 0 80px; }
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 56px; padding-top: 56px; padding-bottom: 80px; }
 h1 { margin: 0; font-size: 30px; font-weight: 500; letter-spacing: -.03em; }
 .sub { margin: 8px 0 0; color: var(--faint); font-size: 14px; }
 .tools { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 28px 0 8px; }
@@ -59,6 +59,10 @@ function feed() {
   var items = [];
   S.coins.forEach(function (c) { c.new.forEach(function (s) { items.push({c: c, s: s}); }); });
   items = items.filter(function (x) { var k = L.K[x.s.kind]; return (!st.dir || k[1] === st.dir) && (!st.tf || x.s.tf === st.tf); });
+  var merged = {}, out = [];
+  items.forEach(function (x) { var key = x.c.base + "|" + x.s.tf + "|" + x.s.t;
+    if (merged[key]) merged[key].more.push(x.s); else { x.more = []; merged[key] = x; out.push(x); } });
+  items = out;
   items.sort(function (a, b) { return b.s.t - a.s.t || a.c.rank - b.c.rank; });
   var now = Date.now(), groups = [["Last 4 hours", 4 * 3600e3], ["Earlier today", 24 * 3600e3], ["Last 3 days", 1e15]], html = "", gi = -1;
   items.forEach(function (x) {
@@ -67,7 +71,7 @@ function feed() {
     var k = L.K[x.s.kind], c = x.c, closed = x.s.t + {"1h": 3600e3, "4h": 4 * 3600e3, "1d": 864e5}[x.s.tf];
     html += '<a class="row" href="../coin/' + c.base.toLowerCase() + '/"><span class="t">' + L.ago(closed) + "</span>" +
       '<span class="asset">' + L.icon(c) + '<span class="n"><b>' + c.name + "</b><small>" + c.base + "</small></span></span>" +
-      '<span class="sig"><b>' + k[0] + "</b><small>" + x.s.tf + " chart</small></span>" +
+      '<span class="sig"><b>' + [k[0]].concat(x.more.map(function (m) { return L.K[m.kind][0]; })).join(" · ") + "</b><small>" + x.s.tf + " chart</small></span>" +
       '<span class="dir ' + (k[1] === "bull" ? "up" : "dn") + '">' + (k[1] === "bull" ? "▲ Bullish" : "▼ Bearish") + "</span>" +
       '<span class="px"><div>' + L.usd(c.price) + '</div><small class="' + L.cls(c.change) + '">' + L.pct(c.change) + "</small></span></a>";
   });
