@@ -194,7 +194,7 @@
     });
     $("count").textContent = shown === rows.length ? rows.length + " coins" : shown + " of " + rows.length + " coins";
     $("none").hidden = shown > 0;
-    document.querySelectorAll(".kinds .pill").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.k === st.kind)); });
+    if ($("kind")) { if (!$("kind").querySelector('option[value="' + st.kind + '"]')) st.kind = ""; $("kind").value = st.kind; }
     document.querySelectorAll(".seg[data-g]").forEach(function (g) {
       g.querySelectorAll("button").forEach(function (b) { b.classList.toggle("on", b.dataset.v === st[g.dataset.g]); });
     });
@@ -212,9 +212,7 @@
     }[st.sort] || function () { return 0; };
     rows.sort(cmp).forEach(function (r) { body.appendChild(r); });
   }
-  document.querySelectorAll(".kinds .pill").forEach(function (b) {
-    b.addEventListener("click", function () { st.kind = st.kind === b.dataset.k ? "" : b.dataset.k; apply(); });
-  });
+  if ($("kind")) $("kind").addEventListener("change", function () { st.kind = $("kind").value; apply(); });
   document.querySelectorAll(".seg[data-g] button").forEach(function (b) {
     b.addEventListener("click", function () { st[b.parentNode.dataset.g] = b.dataset.v; apply(); });
   });

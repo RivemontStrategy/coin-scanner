@@ -159,14 +159,22 @@ and can be wrong or late.</p>
 
 # ---------------------------------------------------------------- home
 
+def compact_usd(x: float) -> str:
+    for div, unit in ((1e9, "B"), (1e6, "M"), (1e3, "K")):
+        if x >= div:
+            return f"${x / div:.2f}{unit}" if x / div < 100 else f"${x / div:.0f}{unit}"
+    return f"${x:.0f}"
+
+
 def home(ctx: Ctx) -> str:
     ctx.prefix = ""
     coins = ctx.scan["coins"]
     n_new = sum(len(c["new"]) for c in coins)
     n_coins = sum(1 for c in coins if c["new"])
     per = Counter(s["kind"] for c in coins for s in c["new"])
-    kinds = "".join(f'<button type="button" class="pill k" data-k="{k.slug}" aria-pressed="false"><span class="dot {k.direction}">'
-                    f'</span>{escape(k.title)}<b class="num">{per.get(k.slug, 0)}</b></button>'
+    n_bull = sum(n for k, n in per.items() if KINDS[k].direction == "bull")
+    n_bear = n_new - n_bull
+    kinds = "".join(f'<option value="{k.slug}">{escape(k.title)} ({per.get(k.slug, 0)})</option>'
                     for k in sorted(KINDS.values(), key=lambda k: -per.get(k.slug, 0)))
     rows = []
     for c in coins:
@@ -175,33 +183,40 @@ def home(ctx: Ctx) -> str:
         rows.append(
             f'<tr data-sym="{escape(c["base"].upper())}" data-vol="{c["qv"]:.0f}" data-chg="{c["change"]:.4f}" '
             f'data-n="{len(c["new"])}" data-rank="{c["rank"]}">'
-            f'<td class="rk num">{c["rank"]}</td>'
-            f'<td class="coin"><a href="{ctx.href(coin_path(c["base"]))}">{icon(c["base"])}<b>{escape(c["base"])}</b></a></td>'
+            f'<td class="coin"><a href="{ctx.href(coin_path(c["base"]))}">{icon(c["base"])}'
+            f'<span class="nm"><b>{escape(c["base"])}</b><small>Vol {escape(compact_usd(c["qv"]))}</small></span></a></td>'
             f'<td class="num px" data-price="{live}">{escape(usd(c["price"]))}</td>'
             f'<td class="num ch {updn(c["change"])}" data-chg-of="{live}">{pct(c["change"])}</td>'
             f'<td class="sigs">{chips}</td></tr>')
     body = f"""
-<section class="hero">
-<p class="eyebrow">{escape(ctx.cfg["tagline"])}</p>
-<h1><span class="num">{n_new}</span> new signals <span class="soft">on {n_coins} of the top {len(coins)} coins</span></h1>
-<p class="sub">RSI, trend turns, crosses, double tops and bottoms, volume spikes and 30-day breakouts, from the last 3
-closed candles on the 1h, 4h and daily charts.</p>
+<section class="head">
+<div class="ht">
+<h1>Crypto signal scanner</h1>
+<p class="sub2">Top {len(coins)} coins · 1h, 4h and daily charts · closed candles only</p>
 {status_line(ctx)}
+</div>
+<dl class="stats">
+<div><dt>New signals</dt><dd class="num">{n_new}</dd></div>
+<div><dt>Coins with signals</dt><dd class="num">{n_coins}<span class="soft"> / {len(coins)}</span></dd></div>
+<div><dt>Bullish / bearish</dt><dd class="num">{n_bull}<span class="soft"> / </span>{n_bear}</dd></div>
+</dl>
 </section>
-<section class="kinds" aria-label="Signal types">{kinds}</section>
-<section class="bar" aria-label="Filters">
+<section class="panel">
+<div class="bar" aria-label="Filters">
 <div class="seg" data-g="tf"><button type="button" class="on" data-v="">All</button><button type="button" data-v="1h">1h</button><button type="button" data-v="4h">4h</button><button type="button" data-v="1d">1d</button></div>
 <div class="seg" data-g="dir"><button type="button" class="on" data-v="">Both</button><button type="button" data-v="bull">Bullish</button><button type="button" data-v="bear">Bearish</button></div>
+<select id="kind" class="sel" aria-label="Signal type"><option value="">All signals ({n_new})</option>{kinds}</select>
 <label class="tog"><input id="f-only" type="checkbox"><span>With signals</span></label>
 <span class="grow"></span>
 <input id="q" type="search" placeholder="Search coin" autocomplete="off" aria-label="Search coin">
-<select id="sort" aria-label="Sort"><option value="rank">Sort: volume</option><option value="n">Sort: most signals</option><option value="chg-desc">Sort: 24h gain</option><option value="chg-asc">Sort: 24h loss</option><option value="sym">Sort: name</option></select>
-</section>
-<p id="count" class="fine" aria-live="polite"></p>
+<select id="sort" class="sel" aria-label="Sort"><option value="rank">Sort: volume</option><option value="n">Sort: most signals</option><option value="chg-desc">Sort: 24h gain</option><option value="chg-asc">Sort: 24h loss</option><option value="sym">Sort: name</option></select>
+</div>
 <table class="coins">
-<thead><tr><th class="rk num">#</th><th>Coin</th><th class="num">Price</th><th class="num">24h</th><th>New signals</th></tr></thead>
+<thead><tr><th>Coin</th><th class="num">Price</th><th class="num">24h</th><th>New signals</th></tr></thead>
 <tbody>{"".join(rows)}</tbody></table>
 <p class="empty" id="none" hidden>No coin matches these filters.</p>
+<p id="count" class="fine" aria-live="polite"></p>
+</section>
 {refs_html(ctx)}"""
     ld = {"@context": "https://schema.org", "@type": "WebSite", "name": ctx.name, "url": ctx.url()}
     return page(ctx, "", f"{ctx.name}: {ctx.cfg['tagline']}",
