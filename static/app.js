@@ -94,8 +94,11 @@
     });
     document.querySelectorAll("[data-chg-of]").forEach(function (el) {
       var q = prices[el.dataset.chgOf]; if (!q) return;
-      el.textContent = pct(q.c) + (el.dataset.suffix || "");
-      el.classList.toggle("up", q.c > 0); el.classList.toggle("dn", q.c < 0);
+      if (el.dataset.tri) {
+        var c = q.c > 0 ? "up" : q.c < 0 ? "dn" : "";
+        el.innerHTML = '<span class="chg ' + c + '"><i>' + (q.c > 0 ? "▲" : q.c < 0 ? "▼" : "") + "</i>" + Math.abs(q.c).toFixed(2) + "%</span>";
+      } else el.textContent = pct(q.c) + (el.dataset.suffix || "");
+      if (!el.dataset.tri) { el.classList.toggle("up", q.c > 0); el.classList.toggle("dn", q.c < 0); }
       var tr = el.closest("tr"); if (tr) tr.dataset.chg = q.c.toFixed(4);
     });
   }
@@ -163,39 +166,41 @@
 
   // ---------------------------------------------------------------- pill groups
   function pills(group, st, onchange) {
-    document.querySelectorAll('.pills[data-g="' + group + '"] .pill').forEach(function (b) {
+    document.querySelectorAll('.pills[data-g="' + group + '"] .pill, .pills[data-g="' + group + '"] .tab').forEach(function (b) {
       b.addEventListener("click", function () { st[group] = b.dataset.v; onchange(); });
     });
   }
   function mark(st) {
     document.querySelectorAll(".pills[data-g]").forEach(function (g) {
-      g.querySelectorAll(".pill").forEach(function (b) { b.classList.toggle("on", b.dataset.v === st[g.dataset.g]); });
+      g.querySelectorAll(".pill, .tab").forEach(function (b) { b.classList.toggle("on", b.dataset.v === st[g.dataset.g]); });
     });
   }
 
-  // ---------------------------------------------------------------- Markets: filters, sorting, search
-  var mk = document.querySelector("table.mk tbody");
-  if (mk && $("count")) {
-    var rows = Array.prototype.slice.call(mk.rows), KEY = "rv-markets", ms = {f: "", o: "rank"};
-    try { var sv = JSON.parse(localStorage.getItem(KEY) || "{}"); if (typeof sv.f === "string") ms.f = sv.f; if (typeof sv.o === "string") ms.o = sv.o; } catch (e) {}
+  // ---------------------------------------------------------------- Markets: list tabs and search
+  var mk = document.querySelector("table.cmc tbody");
+  if (mk) {
+    var rows = Array.prototype.slice.call(mk.rows), KEY = "rv-markets", ms = {f: ""};
+    try { var sv = JSON.parse(localStorage.getItem(KEY) || "{}"); if (typeof sv.f === "string") ms.f = sv.f; } catch (e) {}
     var applyMk = function () {
       var q = find ? find.value.trim().toUpperCase() : "", shown = 0;
       var num = function (r, k) { return Number(r.dataset[k]); };
-      var cmp = {rank: function (a, b) { return num(a, "rank") - num(b, "rank"); },
-        chg: function (a, b) { return Math.abs(num(b, "chg")) - Math.abs(num(a, "chg")); },
-        n: function (a, b) { return num(b, "n") - num(a, "n") || num(a, "rank") - num(b, "rank"); }}[ms.o] || function () { return 0; };
+      var cmp = ms.f === "gain" ? function (a, b) { return num(b, "chg") - num(a, "chg"); } :
+        ms.f === "lose" ? function (a, b) { return num(a, "chg") - num(b, "chg"); } :
+        ms.f === "sig" ? function (a, b) { return num(b, "n") - num(a, "n") || num(a, "rank") - num(b, "rank"); } :
+        function (a, b) { return num(a, "rank") - num(b, "rank"); };
       rows.sort(cmp).forEach(function (r) { mk.appendChild(r); });
       rows.forEach(function (r) {
         var vis = (!q || r.dataset.sym.indexOf(q) === 0 || r.dataset.name.indexOf(q) === 0) &&
-          (!ms.f || (ms.f === "sig" && num(r, "n") > 0) || (ms.f === "ob" && r.dataset.ob === "1") || (ms.f === "os" && r.dataset.os === "1"));
+          (!ms.f || (ms.f === "sig" && num(r, "n") > 0) || (ms.f === "ob" && r.dataset.ob === "1") || (ms.f === "os" && r.dataset.os === "1") ||
+           (ms.f === "gain" && num(r, "chg") > 0) || (ms.f === "lose" && num(r, "chg") < 0));
         r.hidden = !vis; if (vis) shown++;
       });
-      $("count").textContent = shown === rows.length ? rows.length + " coins" : shown + " of " + rows.length + " coins";
+      if ($("count")) $("count").textContent = shown === rows.length ? rows.length + " coins" : shown + " of " + rows.length + " coins";
       $("none").hidden = shown > 0;
       mark(ms);
       try { localStorage.setItem(KEY, JSON.stringify(ms)); } catch (e) {}
     };
-    pills("f", ms, applyMk); pills("o", ms, applyMk);
+    pills("f", ms, applyMk);
     document.addEventListener("rv-find", applyMk);
     applyMk();
   }

@@ -200,62 +200,161 @@ def stats(items: list[tuple[str, str]]) -> str:
     return '<dl class="stats">' + "".join(f"<div><dt>{k}</dt><dd>{v}</dd></div>" for k, v in items) + "</dl>"
 
 
-# ---------------------------------------------------------------- Markets (home)
+# ---------------------------------------------------------------- Markets (home), laid out like the big coin-price sites
+
+def big_usd(x) -> str:
+    if x is None:
+        return "–"
+    for div, unit in ((1e12, "T"), (1e9, "B"), (1e6, "M"), (1e3, "K")):
+        if x >= div:
+            return f"${x / div:.2f}{unit}"
+    return f"${x:,.0f}"
+
+
+def chg(x, cls: str = "") -> str:
+    """A % move with a small triangle, like the price sites: ▲ 2.74% / ▼ 0.30%."""
+    if x is None:
+        return '<span class="faint">–</span>'
+    t = "▲" if x > 0 else "▼" if x < 0 else ""
+    return f'<span class="chg {updn(x)} {cls}"><i>{t}</i>{abs(x):.2f}%</span>'
+
+
+def ordered(coins: list[dict]) -> list[dict]:
+    """Market-cap order when CoinGecko gave one (like the price sites), the rest after by 24h volume."""
+    big = 10 ** 9
+    return sorted(coins, key=lambda c: (c.get("mcap_rank") or big, c["rank"]))
+
+
+def gauge(value: int, label: str) -> str:
+    """A half-circle dial (0-100) for Fear & Greed and the signal mood."""
+    import math
+    a = math.pi * (1 - max(0, min(100, value)) / 100)
+    x, y = 50 + 40 * math.cos(a), 50 - 40 * math.sin(a)
+    return (f'<svg class="gauge" viewBox="0 0 100 58" aria-hidden="true"><path class="g-tr" d="M10 50 A40 40 0 0 1 90 50"/>'
+            f'<path class="g-dn" d="M10 50 A40 40 0 0 1 30 15.4"/><path class="g-up" d="M70 15.4 A40 40 0 0 1 90 50"/>'
+            f'<circle class="g-dot" cx="{x:.1f}" cy="{y:.1f}" r="4.2"/></svg>'
+            f'<div class="g-v"><b class="num">{value}</b><span>{escape(label)}</span></div>')
+
 
 def home(ctx: Ctx) -> str:
     ctx.prefix = ""
-    coins = ctx.scan["coins"]
+    coins = ordered(ctx.scan["coins"])
+    g = ctx.scan.get("global") or {}
     n_new = sum(len(c["new"]) for c in coins)
-    n_coins = sum(1 for c in coins if c["new"])
     n_bull = sum(1 for c in coins for s in c["new"] if KINDS[s["kind"]].direction == "bull")
-    share = round(n_bull / n_new * 100) if n_new else 0
+    share = round(n_bull / n_new * 100) if n_new else 50
+    mood = "Bullish" if share >= 60 else "Bearish" if share <= 40 else "Mixed"
+
+    # ---- highlight cards
+    tiles = []
+    if g.get("fng") is not None:
+        tiles.append(f'<div class="tile gtile"><span class="tl">Fear &amp; Greed</span>{gauge(g["fng"], g.get("fng_label", ""))}</div>')
+    tiles.append(f'<div class="tile gtile"><span class="tl">Signal mood</span>{gauge(share, mood)}</div>')
+    if g.get("mcap"):
+        tiles.append(f'<div class="tile"><span class="tl">Market cap</span><b class="num">{big_usd(g["mcap"])}</b>{chg(g.get("mcap_ch"))}</div>')
+    if g.get("btc_dom"):
+        tiles.append(f'<div class="tile"><span class="tl">BTC dominance</span><b class="num">{g["btc_dom"]:.1f}%</b>'
+                     f'<span class="faint">ETH {g.get("eth_dom") or 0:.1f}%</span></div>')
+    newest = sorted(((c, s) for c in coins for s in c["new"]), key=lambda x: (-(x[1]["t"] + TF_MS[x[1]["tf"]]),
+                                                                              coins.index(x[0])))
+    seen, fresh = set(), []
+    for c, s in newest:
+        if c["base"] not in seen:
+            seen.add(c["base"])
+            fresh.append((c, s))
+        if len(fresh) == 5:
+            break
+
+    def li(i, c, right):
+        return (f'<a class="li" href="{ctx.href(coin_path(c["base"]))}"><span class="faint num">{i}</span>{icon(c)}'
+                f'<b>{escape(name_of(c))}</b><span class="sp"></span>{right}</a>')
+    sig_list = "".join(li(i + 1, c, f'<span class="mini-sig">{arrow(KINDS[s["kind"]].direction)}{escape(KINDS[s["kind"]].short.replace(" ▲", "").replace(" ▼", ""))} '
+                                    f'<i>{escape(s["tf"])}</i></span>') for i, (c, s) in enumerate(fresh))
+    gainers = sorted(coins, key=lambda c: -c["change"])[:5]
+    gain_list = "".join(li(i + 1, c, f'<span class="num">{escape(usd(c["price"]))}</span>{chg(c["change"], "w")}')
+                        for i, c in enumerate(gainers))
+    r4 = [c for c in coins if (c.get("rsi") or {}).get("4h") is not None]
+    hot = sorted(r4, key=lambda c: -c["rsi"]["4h"])[:3]
+    cold = sorted(r4, key=lambda c: c["rsi"]["4h"])[:3]
+    rsi_list = ("".join(li("▲", c, f'<span class="num dn">{c["rsi"]["4h"]:.0f}</span>') for c in hot) +
+                "".join(li("▼", c, f'<span class="num up">{c["rsi"]["4h"]:.0f}</span>') for c in cold))
+    cards = (f'<section class="hl">'
+             f'<div class="hc"><h3>Market</h3><div class="tiles">{"".join(tiles)}</div></div>'
+             f'<div class="hc"><h3><a href="{ctx.href("signals/")}">Newest signals ›</a></h3>{sig_list or "<p class=faint>None right now</p>"}</div>'
+             f'<div class="hc"><h3>Top gainers, 24h</h3>{gain_list}</div>'
+             f'<div class="hc"><h3>RSI extremes, 4h chart</h3>{rsi_list}</div></section>')
+
+    # ---- the table
     rows = []
-    for c in coins:
+    for n, c in enumerate(coins, 1):
         live = escape(c["base"].upper() + "USDT")
         rsi = c.get("rsi") or {}
         vals = [v for v in rsi.values() if v is not None]
-        newest = sorted(c["new"], key=lambda s: -s["t"])
-        if newest:
-            s, k = newest[0], KINDS[newest[0]["kind"]]
-            more = f" · +{len(newest) - 1} more" if len(newest) > 1 else ""
-            last = (f'<a class="last" href="{ctx.href(coin_path(c["base"]))}" title="{escape(k.title)} · {escape(when(s))}" '
-                    f'data-when="{escape(when(s))}">{arrow(k.direction)}<b>{escape(k.title)}</b><small>{escape(s["tf"])} chart{more}</small></a>')
+        rsis = " ".join(
+            f'<span class="r{" dn" if v is not None and v >= 70 else " up" if v is not None and v <= 30 else ""}" title="RSI {tf}">'
+            f'{"–" if v is None else f"{v:.0f}"}</span>' for tf, v in ((tf, rsi.get(tf)) for tf in ("1h", "4h", "1d")))
+        newest_c = sorted(c["new"], key=lambda s: -s["t"])
+        if newest_c:
+            s, k = newest_c[0], KINDS[newest_c[0]["kind"]]
+            more = f'<em>+{len(newest_c) - 1}</em>' if len(newest_c) > 1 else ""
+            last = (f'<a class="sg {"up" if k.direction == "bull" else "dn"}" href="{ctx.href(coin_path(c["base"]))}" '
+                    f'title="{escape(k.title)} · {escape(when(s))}" data-when="{escape(when(s))}">'
+                    f'<i>{"▲" if k.direction == "bull" else "▼"}</i><b>{escape(k.title)}</b><span>{escape(s["tf"])}</span>{more}</a>')
         else:
             last = '<span class="faint">–</span>'
+        sp = c.get("spark")
         rows.append(
-            f'<tr data-sym="{escape(c["base"].upper())}" data-name="{escape(name_of(c).upper())}" data-rank="{c["rank"]}" '
+            f'<tr data-sym="{escape(c["base"].upper())}" data-name="{escape(name_of(c).upper())}" data-rank="{n}" '
             f'data-chg="{c["change"]:.4f}" data-n="{len(c["new"])}" data-ob="{int(any(v >= 70 for v in vals))}" '
             f'data-os="{int(any(v <= 30 for v in vals))}">'
-            f'<td class="a">{asset(ctx, c, escape(c["base"]) + " · " + compact_usd(c["qv"]))}</td>'
-            f'<td class="num" data-price="{live}">{escape(usd(c["price"]))}</td>'
-            f'<td class="num {updn(c["change"])}" data-chg-of="{live}">{pct(c["change"])}</td>'
-            f'<td class="sp hide-m">{spark(c.get("spark"))}</td>'
-            + "".join(f'<td class="hide-m">{rsi_cell(rsi.get(tf))}</td>' for tf in ("1h", "4h", "1d"))
-            + f'<td class="hide-m l">{last}</td></tr>')
+            f'<td class="rk num">{n}</td>'
+            f'<td class="nm"><a href="{ctx.href(coin_path(c["base"]))}">{icon(c)}<b>{escape(name_of(c))}</b>'
+            f'<span class="tk">{escape(c["base"])}</span></a></td>'
+            f'<td class="num pr" data-price="{live}">{escape(usd(c["price"]))}</td>'
+            f'<td class="num hide-m">{chg(c.get("ch1h"))}</td>'
+            f'<td class="num" data-chg-of="{live}" data-tri="1">{chg(c["change"])}</td>'
+            f'<td class="num hide-m">{chg(c.get("ch7d"))}</td>'
+            f'<td class="num hide-m hide-l">{big_usd(c.get("mcap"))}</td>'
+            f'<td class="num hide-m">{big_usd(c["qv"])}</td>'
+            f'<td class="num hide-m rsis">{rsis}</td>'
+            f'<td class="hide-m l">{last}</td>'
+            f'<td class="hide-m spk">{spark(sp, 120, 38).replace("sp-up", "sp-up c").replace("sp-dn", "sp-dn c")}</td></tr>')
+    tabs = (("", "Top"), ("sig", "With signals"), ("ob", "Overbought"), ("os", "Oversold"), ("gain", "Gainers"), ("lose", "Losers"))
+    tab_html = "".join(f'<button type="button" class="tab{" on" if v == "" else ""}" data-v="{v}">{t}</button>' for v, t in tabs)
+    gen = ctx.scan["generated"]
+    bar = [f'Coins: <b class="num">{len(coins)}</b>']
+    if g.get("mcap"):
+        bar.append(f'Market cap: <b class="num">{big_usd(g["mcap"])}</b> {chg(g.get("mcap_ch"))}')
+    if g.get("vol"):
+        bar.append(f'24h vol: <b class="num">{big_usd(g["vol"])}</b>')
+    if g.get("btc_dom"):
+        bar.append(f'Dominance: <b class="num">BTC {g["btc_dom"]:.1f}% · ETH {g.get("eth_dom") or 0:.1f}%</b>')
+    if g.get("fng") is not None:
+        bar.append(f'Fear &amp; Greed: <b class="num">{g["fng"]}/100</b>')
+    bar.append(f'New signals: <b class="num">{n_new}</b>')
     body = f"""
-<section class="head">
-<div><h1>Markets</h1>
-<p class="sub">Top {len(coins)} coins · RSI and the newest signal on the 1h, 4h and daily charts · closed candles only</p>
-{status_line(ctx)}</div>
-{stats([("New signals", str(n_new)), ("Coins with signals", f'{n_coins}<span class="soft"> / {len(coins)}</span>'),
-        ("Bullish share", f'{share}<span class="soft">%</span>')])}
+<section class="mhead">
+<h1>Crypto prices and signals</h1>
+<p class="sub">Top {len(coins)} coins by market cap, with RSI and new chart signals on the 1h, 4h and daily charts.
+Signals updated {hhmm(gen)} UTC · next in <span data-next>~{ctx.scan.get("every_min", 15)}</span> min · <span class="live" data-live>Prices loading</span></p>
 </section>
-<section class="panel">
-<div class="tools">
-<div class="pills" data-g="f"><button type="button" class="pill on" data-v="">All coins</button><button type="button" class="pill" data-v="sig">With new signals</button><button type="button" class="pill" data-v="ob">Overbought</button><button type="button" class="pill" data-v="os">Oversold</button></div>
-<div class="pills" data-g="o"><button type="button" class="pill on" data-v="rank">Volume</button><button type="button" class="pill" data-v="chg">24h move</button><button type="button" class="pill" data-v="n">Signals</button></div>
-</div>
-<table class="mk">
-<thead><tr><th class="a">Asset</th><th>Price</th><th>24h</th><th class="hide-m">7 days</th><th class="hide-m">RSI 1h</th><th class="hide-m">RSI 4h</th><th class="hide-m">RSI 1d</th><th class="hide-m l">Newest signal</th></tr></thead>
+{cards}
+<nav class="cats pills" data-g="f" aria-label="Lists">{tab_html}</nav>
+<div class="tblw">
+<table class="cmc">
+<thead><tr><th class="rk">#</th><th class="nm">Name</th><th>Price</th><th class="hide-m">1h %</th><th>24h %</th><th class="hide-m">7d %</th>
+<th class="hide-m hide-l">Market cap</th><th class="hide-m">Volume (24h)</th><th class="hide-m" title="RSI on the 1h, 4h and daily charts">RSI 1h · 4h · 1d</th>
+<th class="hide-m l">Newest signal</th><th class="hide-m">7d chart</th></tr></thead>
 <tbody>{"".join(rows)}</tbody></table>
 <p class="empty" id="none" hidden>No coin matches.</p>
-<p id="count" class="fine" aria-live="polite"></p>
-</section>
-{refs_html(ctx)}"""
+</div>
+<p id="count" class="fine"></p>
+{refs_html(ctx)}
+<div class="gbar-sp"></div><div class="gbar" role="contentinfo">{" <span class=sep></span> ".join(bar)}</div>"""
     ld = {"@context": "https://schema.org", "@type": "WebSite", "name": ctx.name, "url": ctx.url()}
-    return page(ctx, "", f"{ctx.name}: {ctx.cfg['tagline']}",
-                "Free crypto signal scanner: RSI on the 1h, 4h and daily charts, trend turns, golden and death crosses, "
-                "double tops and bottoms, volume spikes and 30-day breakouts on the top 150 coins, refreshed every 15 minutes.",
+    return page(ctx, "", f"{ctx.name}: crypto prices and signals",
+                "Crypto prices by market cap with RSI on the 1h, 4h and daily charts and new chart signals: trend turns, "
+                "golden and death crosses, double tops and bottoms, volume spikes and 30-day breakouts. Free, every 15 minutes.",
                 body, ld, nav="")
 
 

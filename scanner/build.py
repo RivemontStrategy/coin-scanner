@@ -120,8 +120,10 @@ def run(out: Path, log=print) -> dict:
         coins.append(coin)
         charts[coin["base"]] = {tf: chart_data(b, sigs_by_tf[tf]) for tf, b in bars_by_tf.items()}
     names.attach(coins, log)
+    glob = names.market(log)
     data = {"generated": int(time.time() * 1000), "source": src.name, "every_min": cfg.get("every_min", 15),
-            "source_label": SOURCE_LABEL.get(src.name, src.name), "timeframes": tfs, "coins": coins}
+            "source_label": SOURCE_LABEL.get(src.name, src.name), "timeframes": tfs, "coins": coins,
+            "global": glob}
     write(out, cfg, refs, data, charts)
     log(f"done: {len(coins)} coins, {sum(len(c['new']) for c in coins)} new signals, {time.time() - t0:.0f}s")
     return data
