@@ -295,6 +295,7 @@ table.cmc { width: 100%; border-collapse: collapse; font-size: 15px; }
   .two { grid-template-columns: 1fr; gap: 28px; }
   .hide-m { display: none; }
   .hl { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 calc(-1 * var(--edge)); padding: 0 var(--edge);
+    scroll-padding-left: var(--edge);
     scrollbar-width: none; }
   .hl::-webkit-scrollbar { display: none; }
   .hc { flex: 0 0 86%; scroll-snap-align: start; }
