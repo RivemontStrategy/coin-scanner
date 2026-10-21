@@ -299,7 +299,7 @@ def home(ctx: Ctx) -> str:
             more = f'<em>+{len(newest_c) - 1}</em>' if len(newest_c) > 1 else ""
             last = (f'<a class="sg {"up" if k.direction == "bull" else "dn"}" href="{ctx.href(coin_path(c["base"]))}" '
                     f'title="{escape(k.title)} · {escape(when(s))}" data-when="{escape(when(s))}">'
-                    f'<i>{"▲" if k.direction == "bull" else "▼"}</i><b>{escape(k.title)}</b><span>{escape(s["tf"])}</span>{more}</a>')
+                    f'<i>{"▲" if k.direction == "bull" else "▼"}</i><b>{escape(k.short.replace(" ▲", "").replace(" ▼", ""))}</b><span>{escape(s["tf"])}</span>{more}</a>')
         else:
             last = '<span class="faint">–</span>'
         sp = c.get("spark")
@@ -315,7 +315,7 @@ def home(ctx: Ctx) -> str:
             f'<td class="num" data-chg-of="{live}" data-tri="1">{chg(c["change"])}</td>'
             f'<td class="num hide-m">{chg(c.get("ch7d"))}</td>'
             f'<td class="num hide-m hide-l">{big_usd(c.get("mcap"))}</td>'
-            f'<td class="num hide-m">{big_usd(c["qv"])}</td>'
+            f'<td class="num hide-m">{big_usd(c.get("vol") or c["qv"])}</td>'
             f'<td class="num hide-m rsis">{rsis}</td>'
             f'<td class="hide-m l">{last}</td>'
             f'<td class="hide-m spk">{spark(sp, 120, 38).replace("sp-up", "sp-up c").replace("sp-dn", "sp-dn c")}</td></tr>')

@@ -37,7 +37,7 @@ def fetch(log=print, pages: int = 2) -> dict[str, dict]:
                     "mcap": m.get("market_cap"), "mcap_rank": m.get("market_cap_rank"),
                     "ch1h": m.get("price_change_percentage_1h_in_currency"),
                     "ch7d": m.get("price_change_percentage_7d_in_currency"),
-                    "supply": m.get("circulating_supply"),
+                    "supply": m.get("circulating_supply"), "vol": m.get("total_volume"),
                 }
         time.sleep(1.5)
     log(f"names: {len(out)} from CoinGecko")
@@ -51,7 +51,7 @@ def attach(coins: list[dict], log=print) -> None:
         if not n:
             continue
         c["name"], c["img"] = n["name"], n["img"]
-        for k in ("mcap", "mcap_rank", "ch1h", "ch7d", "supply"):
+        for k in ("mcap", "mcap_rank", "ch1h", "ch7d", "supply", "vol"):
             if n.get(k) is not None:
                 c[k] = n[k]
 
@@ -64,6 +64,8 @@ def market(log=print) -> dict:
         g = {"mcap": d["total_market_cap"]["usd"], "mcap_ch": d.get("market_cap_change_percentage_24h_usd"),
              "vol": d["total_volume"]["usd"], "btc_dom": d["market_cap_percentage"].get("btc"),
              "eth_dom": d["market_cap_percentage"].get("eth")}
+        if not g["vol"] or not g["mcap"] or g["vol"] > g["mcap"]:   # CoinGecko's global volume is sometimes garbage
+            g.pop("vol")
     except Exception as e:                           # noqa: BLE001
         log(f"global: CoinGecko failed: {e}")
     try:
