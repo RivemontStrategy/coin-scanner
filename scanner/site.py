@@ -271,7 +271,7 @@ def home(ctx: Ctx) -> str:
     sig_list = "".join(li(i + 1, c, f'<span class="mini-sig">{arrow(KINDS[s["kind"]].direction)}{escape(KINDS[s["kind"]].short.replace(" ▲", "").replace(" ▼", ""))} '
                                     f'<i>{escape(s["tf"])}</i></span>') for i, (c, s) in enumerate(fresh))
     gainers = sorted(coins, key=lambda c: -c["change"])[:5]
-    gain_list = "".join(li(i + 1, c, f'<span class="num">{escape(usd(c["price"]))}</span>{chg(c["change"], "w")}')
+    gain_list = "".join(li(i + 1, c, chg(c["change"], "w"))
                         for i, c in enumerate(gainers))
     r4 = [c for c in coins if (c.get("rsi") or {}).get("4h") is not None]
     hot = sorted(r4, key=lambda c: -c["rsi"]["4h"])[:3]
@@ -311,7 +311,7 @@ def home(ctx: Ctx) -> str:
             f'<td class="nm"><a href="{ctx.href(coin_path(c["base"]))}">{icon(c)}<b>{escape(name_of(c))}</b>'
             f'<span class="tk">{escape(c["base"])}</span></a></td>'
             f'<td class="num pr" data-price="{live}">{escape(usd(c["price"]))}</td>'
-            f'<td class="num hide-m hide-l">{chg(c.get("ch1h"))}</td>'
+            f'<td class="num hide-m hide-l hide-xl">{chg(c.get("ch1h"))}</td>'
             f'<td class="num" data-chg-of="{live}" data-tri="1">{chg(c["change"])}</td>'
             f'<td class="num hide-m">{chg(c.get("ch7d"))}</td>'
             f'<td class="num hide-m hide-l">{big_usd(c.get("mcap"))}</td>'
@@ -342,7 +342,7 @@ Signals updated {hhmm(gen)} UTC · next in <span data-next>~{ctx.scan.get("every
 <nav class="cats pills" data-g="f" aria-label="Lists">{tab_html}</nav>
 <div class="tblw">
 <table class="cmc">
-<thead><tr><th class="rk">#</th><th class="nm">Name</th><th>Price</th><th class="hide-m hide-l">1h %</th><th>24h %</th><th class="hide-m">7d %</th>
+<thead><tr><th class="rk">#</th><th class="nm">Name</th><th>Price</th><th class="hide-m hide-l hide-xl">1h %</th><th>24h %</th><th class="hide-m">7d %</th>
 <th class="hide-m hide-l">Market cap</th><th class="hide-m">Volume (24h)</th><th class="hide-m" title="RSI on the 1h, 4h and daily charts">RSI 1h · 4h · 1d</th>
 <th class="hide-m l">Newest signal</th><th class="hide-m">7d chart</th></tr></thead>
 <tbody>{"".join(rows)}</tbody></table>
