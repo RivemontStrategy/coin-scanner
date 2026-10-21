@@ -25,7 +25,7 @@ body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 var
   font-variant-numeric: tabular-nums; }
 a { color: inherit; text-decoration: none; }
 :focus-visible { outline: 2px solid var(--muted); outline-offset: 2px; border-radius: 6px; }
-.wrap { max-width: 1240px; margin: 0 auto; padding: 0 var(--edge); }
+.wrap { max-width: 1440px; margin: 0 auto; padding: 0 var(--edge); }
 .num { font-variant-numeric: tabular-nums; }
 .up { color: var(--up); } .dn { color: var(--dn); }
 .soft, .faint { color: var(--faint); } .muted { color: var(--muted); }
@@ -38,7 +38,7 @@ h2 { margin: 0 0 14px; font-size: 15px; font-weight: 500; }
 
 /* ---------------------------------------------------------------- top bar */
 .top { border-bottom: 1px solid var(--line2); }
-.top .in { max-width: 1240px; margin: 0 auto; padding: 0 var(--edge); height: 64px; display: flex; align-items: center; gap: 36px; }
+.top .in { max-width: 1440px; margin: 0 auto; padding: 0 var(--edge); height: 64px; display: flex; align-items: center; gap: 36px; }
 .brand { display: flex; align-items: center; gap: 10px; }
 .brand .mark { width: 14px; height: 19px; }
 .brand span { font: 600 14px/1 var(--font); letter-spacing: .16em; }
@@ -230,8 +230,8 @@ details.more[open] summary { display: none; }
 .tblw { overflow-x: auto; }
 table.cmc { width: 100%; border-collapse: collapse; font-size: 14px; }
 .cmc th { text-align: right; font-size: 12.5px; font-weight: 600; color: var(--text); padding: 14px 10px; border-bottom: 1px solid var(--line);
-  white-space: nowrap; position: sticky; top: 0; background: var(--bg); z-index: 1; }
-.cmc td { text-align: right; padding: 0 10px; height: 60px; border-bottom: 1px solid var(--line2); white-space: nowrap; }
+  white-space: nowrap; position: sticky; top: 0; background: var(--bg); z-index: 1; padding-left: 8px; padding-right: 8px; }
+.cmc td { text-align: right; padding: 0 8px; height: 60px; border-bottom: 1px solid var(--line2); white-space: nowrap; }
 .cmc th.nm, .cmc td.nm, .cmc th.l, .cmc td.l { text-align: left; }
 .cmc th.rk, .cmc td.rk { text-align: left; width: 36px; color: var(--muted); padding-left: 6px; }
 .cmc tbody tr:hover td { background: rgba(127,127,127,.05); }
@@ -241,7 +241,7 @@ table.cmc { width: 100%; border-collapse: collapse; font-size: 14px; }
 .cmc td.nm .tk { color: var(--faint); font-size: 13px; }
 .cmc td.nm a:hover b { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--faint); }
 .cmc td.pr { font-weight: 600; }
-.cmc th:last-child { min-width: 140px; }
+.cmc th:last-child { min-width: 116px; }
 .rsis { font-size: 13px; color: var(--muted); }
 .rsis .r { display: inline-block; min-width: 22px; text-align: right; }
 .rsis .r.dn, .rsis .r.up { font-weight: 600; }
@@ -252,12 +252,12 @@ table.cmc { width: 100%; border-collapse: collapse; font-size: 14px; }
 .sg span { color: var(--faint); }
 .sg em { font-style: normal; color: var(--faint); font-size: 11.5px; }
 .sg:hover { border-color: var(--line); }
-.spk { width: 140px; }
+.spk { width: 116px; }
 .spark.c path { stroke-width: 1.5; }
 .spark.c.sp-up path { stroke: var(--up); } .spark.c.sp-dn path { stroke: var(--dn); }
 
 .gbar-sp { height: 8px; }
-.gbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; padding: 9px max(var(--edge), calc((100vw - 1240px) / 2 + var(--edge))); background: var(--panel);
+.gbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; padding: 9px max(var(--edge), calc((100vw - 1440px) / 2 + var(--edge))); background: var(--panel);
   border-top: 1px solid var(--line); font-size: 12px; color: var(--faint); white-space: nowrap; overflow-x: auto; scrollbar-width: none; }
 .gbar::-webkit-scrollbar { display: none; }
 .gbar b { color: var(--text); font-weight: 500; }
@@ -270,7 +270,9 @@ table.cmc { width: 100%; border-collapse: collapse; font-size: 14px; }
   .side { display: none; }
   .mood-inline { display: block !important; }
   .mk .hide-l, .cmc .hide-l { display: none; }
-  .hl { grid-template-columns: 1fr 1fr; }
+  .hl { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .hl::-webkit-scrollbar { display: none; }
+  .hc { flex: 0 0 calc(50% - 6px); scroll-snap-align: start; }
 }
 @media (max-width: 760px) {
   :root, [data-theme="charcoal"], [data-theme="stone"] { --edge: 16px; }

@@ -311,14 +311,14 @@ def home(ctx: Ctx) -> str:
             f'<td class="nm"><a href="{ctx.href(coin_path(c["base"]))}">{icon(c)}<b>{escape(name_of(c))}</b>'
             f'<span class="tk">{escape(c["base"])}</span></a></td>'
             f'<td class="num pr" data-price="{live}">{escape(usd(c["price"]))}</td>'
-            f'<td class="num hide-m">{chg(c.get("ch1h"))}</td>'
+            f'<td class="num hide-m hide-l">{chg(c.get("ch1h"))}</td>'
             f'<td class="num" data-chg-of="{live}" data-tri="1">{chg(c["change"])}</td>'
             f'<td class="num hide-m">{chg(c.get("ch7d"))}</td>'
             f'<td class="num hide-m hide-l">{big_usd(c.get("mcap"))}</td>'
             f'<td class="num hide-m">{big_usd(c.get("vol") or c["qv"])}</td>'
             f'<td class="num hide-m rsis">{rsis}</td>'
             f'<td class="hide-m l">{last}</td>'
-            f'<td class="hide-m spk">{spark(sp, 120, 38).replace("sp-up", "sp-up c").replace("sp-dn", "sp-dn c")}</td></tr>')
+            f'<td class="hide-m spk">{spark(sp, 100, 36).replace("sp-up", "sp-up c").replace("sp-dn", "sp-dn c")}</td></tr>')
     tabs = (("", "Top"), ("sig", "With signals"), ("ob", "Overbought"), ("os", "Oversold"), ("gain", "Gainers"), ("lose", "Losers"))
     tab_html = "".join(f'<button type="button" class="tab{" on" if v == "" else ""}" data-v="{v}">{t}</button>' for v, t in tabs)
     gen = ctx.scan["generated"]
@@ -342,7 +342,7 @@ Signals updated {hhmm(gen)} UTC · next in <span data-next>~{ctx.scan.get("every
 <nav class="cats pills" data-g="f" aria-label="Lists">{tab_html}</nav>
 <div class="tblw">
 <table class="cmc">
-<thead><tr><th class="rk">#</th><th class="nm">Name</th><th>Price</th><th class="hide-m">1h %</th><th>24h %</th><th class="hide-m">7d %</th>
+<thead><tr><th class="rk">#</th><th class="nm">Name</th><th>Price</th><th class="hide-m hide-l">1h %</th><th>24h %</th><th class="hide-m">7d %</th>
 <th class="hide-m hide-l">Market cap</th><th class="hide-m">Volume (24h)</th><th class="hide-m" title="RSI on the 1h, 4h and daily charts">RSI 1h · 4h · 1d</th>
 <th class="hide-m l">Newest signal</th><th class="hide-m">7d chart</th></tr></thead>
 <tbody>{"".join(rows)}</tbody></table>
